@@ -434,4 +434,30 @@ class FileController extends Controller
             ]
         );
     }
+
+    public function rename(Request $request)
+    {
+        $file = $request->file;
+        $oldName = $file;
+        $newName = $request->new_name;
+        $newName = dirname($file) . '/' . $newName;
+        $oldName = $this->normalizePath($oldName);
+        $newName = $this->normalizePath($newName);
+        if (file_exists($oldName)) {
+            rename($oldName, $newName);
+            return response()->json(
+                [
+                    'status' => true,
+                    'message' => 'File renamed successfully'
+                ]
+            );
+        } else {
+            return response()->json(
+                [
+                    'status' => false,
+                    'message' => 'File not found'
+                ]
+            );
+        }
+    }
 }

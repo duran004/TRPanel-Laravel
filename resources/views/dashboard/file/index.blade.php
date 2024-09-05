@@ -148,11 +148,16 @@
 
         <div id="context-menu" class="hidden bg-white shadow-md rounded-md py-2">
             <a href="#" data-type="file" class="block px-4 py-1 text-sm text-gray-800 hover:bg-gray-200"
-                data-action="Open"> <i class="fas fa-eye"></i> {{ __('Open') }}</a>
+                data-action="Open"> <i class="fas fa-eye"></i> {{ __('Edit') }}</a>
             <a href="#" data-type="all" class="block px-4 py-1 text-sm text-gray-800 hover:bg-gray-200"
                 data-action="Download"><i class="fas fa-download"></i>{{ __('Download') }}</a>
-            {{-- <a href="#" data-type="all" class="block px-4 py-1 text-sm text-gray-800 hover:bg-gray-200"
-                data-action="Delete"><i class="fas fa-trash"></i> {{ __('Delete') }}</a> --}} {{-- dangerous need confirm to delete smthing --}}
+            <a href="#" data-type="all" class="block px-4 py-1 text-sm text-gray-800 hover:bg-gray-200"
+                data-action="Reload"><i class="fas fa-sync"></i> {{ __('Reload') }}</a>
+            <a href="#" data-type="all" class="block px-4 py-1 text-sm text-gray-800 hover:bg-gray-200"
+                data-action="Rename"><i class="fas fa-edit"></i> {{ __('Rename') }}</a>
+            <a href="#" data-type="all" class="block px-4 py-1 text-sm text-gray-800 hover:bg-gray-200"
+                data-action="Extract"><i class="fas fa-file-archive"></i> {{ __('Extract') }}</a>
+
         </div>
     </div>
 
@@ -273,6 +278,11 @@
                     contextMenu.querySelector('a[data-type="file"]').classList.remove('hidden');
                     contextMenu.querySelector('a[data-type="all"]').classList.remove('hidden');
                 }
+                if (fileType === 'compressed') {
+                    contextMenu.querySelector('a[data-action="Extract"]').classList.remove('hidden');
+                } else {
+                    contextMenu.querySelector('a[data-action="Extract"]').classList.add('hidden');
+                }
 
                 console.log('File Path:', filePath);
 
@@ -322,11 +332,98 @@
                         downloadInput.value = filePath;
                         downloadForm.submit();
                         break;
-                    case 'Delete':
-                        const trashForm = document.querySelector('#delete-form');
-                        const trashInput = trashForm.querySelector('input[name="_files"]');
-                        trashInput.value = filePath;
-                        trashForm.submit();
+                    case 'Reload':
+                        window.location.reload();
+                        break;
+                    case 'Rename':
+                        const fileName = filePath.split('\\').pop();
+                        $.alert({
+                            title: 'Rename File',
+                            content: `<input type="text" class="form-control" value="${fileName}" id="new-name">`,
+                            onOpenBefore: function() {
+                                $('.jconfirm-row').addClass(
+                                    'inset-0 flex items-center justify-center bg-[#ccc] bg-opacity-50'
+                                );
+                                $('.jconfirm-holder').addClass(
+                                    'flex items-center justify-center');
+                            },
+                            buttons: {
+                                confirm: {
+                                    text: 'Rename',
+                                    btnClass: 'bg-blue-500 text-white',
+                                    action: function() {
+                                        const newName = document.getElementById('new-name').value;
+                                        $.ajax({
+                                            url: '{{ route('filemanager.file.rename') }}',
+                                            type: 'POST',
+                                            data: {
+                                                file: filePath,
+                                                new_name: newName,
+                                                _token: '{{ csrf_token() }}'
+                                            },
+                                            success: function(response) {
+                                                if (response.status) {
+                                                    window.location.reload();
+                                                } else {
+                                                    $.alert({
+                                                        title: 'Error',
+                                                        content: response.message,
+                                                        type: 'red',
+                                                        onOpenBefore: function() {
+                                                            $('.jconfirm-row').addClass(
+                                                                'inset-0 flex items-center justify-center bg-[#ccc] bg-opacity-50'
+                                                            );
+                                                            $('.jconfirm-holder')
+                                                                .addClass(
+                                                                    'flex items-center justify-center'
+                                                                );
+                                                        },
+                                                    });
+                                                }
+                                            },
+                                            error: function(response) {
+                                                $.alert({
+                                                    title: 'Error',
+                                                    content: response.responseJSON.message,
+                                                    type: 'red',
+                                                    onOpenBefore: function() {
+                                                        $('.jconfirm-row').addClass(
+                                                            'inset-0 flex items-center justify-center bg-[#ccc] bg-opacity-50'
+                                                        );
+                                                        $('.jconfirm-holder').addClass(
+                                                            'flex items-center justify-center'
+                                                        );
+                                                    },
+                                                });
+                                            }
+                                        });
+                                    }
+                                },
+                                cancel: {
+                                    text: 'Cancel',
+                                    btnClass: 'bg-red-500 text-white',
+                                }
+                            },
+                        });
+
+                        break;
+                    case 'Extract':
+                        $.ajax({
+                            url: '/filemanager/file/extract',
+                            type: 'POST',
+                            data: {
+                                file: filePath
+                            },
+                            success: function(response) {
+                                if (response.success) {
+                                    window.location.reload();
+                                } else {
+                                    alert(response.message);
+                                }
+                            }
+                        });
+                        break;
+                    default:
                         break;
                 }
 
