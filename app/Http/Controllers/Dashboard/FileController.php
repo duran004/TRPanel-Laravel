@@ -333,9 +333,9 @@ class FileController extends Controller
     {
         //, varsa yada klasörse çoklu silme yap
         if (str_contains($request->_files, ',') || is_dir($request->_files)) {
-            $this->deleteMultipleFiles($request);
+            return $this->deleteMultipleFiles($request);
         } else {
-            $this->deleteSingleFile($request);
+            return $this->deleteSingleFile($request);
         }
     }
 
