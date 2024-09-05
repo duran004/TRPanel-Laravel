@@ -80,6 +80,10 @@ class FormAjax {
             $.confirm({
                 title: this.settings.confirmTitle,
                 content: this.settings.confirmMsg,
+                onOpenBefore: function () {
+                    $('.jconfirm-row').addClass('inset-0 flex items-center justify-center bg-[#ccc] bg-opacity-50');
+                    $('.jconfirm-holder').addClass('flex items-center justify-center');
+                },
 
                 buttons: {
                     Evet: {
@@ -88,7 +92,16 @@ class FormAjax {
                     },
                     Hayir: {
                         btnClass: 'btn-red',
-                        action: () => $.alert('İşlem iptal edildi!'),
+                        action: () => $.alert({
+                            title: 'İptal Edildi',
+                            content: 'İşlem iptal edildi.',
+                            type: 'red',
+                            columnClass: this.popup, onOpenBefore: function () {
+                                $('.jconfirm-row').addClass('inset-0 flex items-center justify-center bg-[#ccc] bg-opacity-50');
+                                $('.jconfirm-holder').addClass('flex items-center justify-center');
+                            },
+                            backgroundDismiss: true,
+                        }),
                     },
                 },
 
@@ -228,7 +241,6 @@ class FormAjax {
                 closeIcon: true,
                 type: 'orange',
                 onOpenBefore: function () {
-                    //find parent jconfirm-row and add class dcdc
                     $('.jconfirm-row').addClass('inset-0 flex items-center justify-center bg-[#ccc] bg-opacity-50');
                     $('.jconfirm-holder').addClass('flex items-center justify-center');
                 },
@@ -266,6 +278,11 @@ class FormAjax {
                 columnClass: this.popupSize + ' col-md-offset-3',
                 title: 'Error',
                 content: errorMessage,
+                onOpenBefore: function () {
+                    $('.jconfirm-row').addClass('inset-0 flex items-center justify-center bg-[#ccc] bg-opacity-50');
+                    $('.jconfirm-holder').addClass('flex items-center justify-center');
+                },
+                backgroundDismiss: true,
                 buttons: {
                     Tamam: {
                         btnClass: 'btn-red',
@@ -335,4 +352,3 @@ formajax_popup.setFormSettings(new FormSettings({ openPopup: true, title: '', co
 const formajax_refresh_popup = new FormAjax('.formajax_refresh_popup');
 formajax_refresh_popup.setFormSettings(new FormSettings({ openPopup: true, title: '', refresh: true, refreshTime: 2000 }));
 
-// TODO: delete işleminde ve hata durumunda popup tailwinde uyumlu çalışmıyor.

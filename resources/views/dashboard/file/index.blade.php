@@ -41,7 +41,8 @@
                     </x-button>
                 </form>
 
-                <form action="{{ route('filemanager.download', ['path' => request()->get('path')]) }}" method="POST"
+                <form id="download-form"
+                    action="{{ route('filemanager.download', ['path' => request()->get('path')]) }}" method="POST"
                     class="">
                     @csrf
                     <x-input type="hidden" name="_files" id="download_files" />
@@ -51,8 +52,9 @@
                 </form>
 
 
-                <form action="{{ route('filemanager.file.destroy', ['path' => request()->get('path')]) }}"
-                    method="POST" class="formajax_delete">
+                <form id="delete-form"
+                    action="{{ route('filemanager.file.destroy', ['path' => request()->get('path')]) }}" method="POST"
+                    class="formajax_delete">
                     @csrf
                     @method('DELETE')
                     <x-input type="hidden" name="_files" id="trash_files" />
@@ -115,7 +117,8 @@
                     </thead>
                     <tbody class="bg-white divide-y divide-gray-200">
                         @foreach ($files as $file)
-                            <tr class="selectable-row context-menu" data-path="{{ $file->path }}">
+                            <tr class="selectable-row context-menu" data-path="{{ $file->path }}"
+                                data-type="{{ $file->type }}">
 
                                 <td class="px-6 py-1 whitespace-nowrap">
                                     <input type="checkbox" class="file-checkbox" data-path="{{ $file->path }}">
@@ -144,11 +147,16 @@
         </div>
 
         <div id="context-menu" class="hidden bg-white shadow-md rounded-md py-2">
-            <a href="#" class="block px-4 py-1 text-sm text-gray-800 hover:bg-gray-200">Open</a>
-            <a href="#" class="block px-4 py-1 text-sm text-gray-800 hover:bg-gray-200">Download</a>
-            <a href="#" class="block px-4 py-1 text-sm text-gray-800 hover:bg-gray-200">Delete</a>
+            <a href="#" data-type="file" class="block px-4 py-1 text-sm text-gray-800 hover:bg-gray-200"
+                data-action="Open"> <i class="fas fa-eye"></i> {{ __('Open') }}</a>
+            <a href="#" data-type="all" class="block px-4 py-1 text-sm text-gray-800 hover:bg-gray-200"
+                data-action="Download"><i class="fas fa-download"></i>{{ __('Download') }}</a>
+            <a href="#" data-type="all" class="block px-4 py-1 text-sm text-gray-800 hover:bg-gray-200"
+                data-action="Delete"><i class="fas fa-trash"></i> {{ __('Delete') }}</a>
         </div>
     </div>
+
+
     <script>
         /**
          * Up One Level
@@ -202,6 +210,14 @@
             return (isWindows ? normalizedSegments.join("\\") : normalizedSegments.join("/"));
         }
 
+        function toggleButtons() {
+            const downloadBtn = document.getElementById('download-btn');
+            const trashBtn = document.getElementById('trash-btn');
+            const anyChecked = Array.from(document.querySelectorAll('.file-checkbox')).some(checkbox => checkbox.checked);
+            downloadBtn.classList.toggle('disabled', !anyChecked);
+            trashBtn.classList.toggle('disabled', !anyChecked);
+        }
+
         /**
          * Context Menu
          */
@@ -213,9 +229,10 @@
                 file.addEventListener('contextmenu', function(event) {
                     event.preventDefault();
                     const filePath = this.getAttribute('data-path');
+                    const fileType = this.getAttribute('data-type');
                     unselectAllFiles();
                     selectRow(this);
-                    showContextMenu(event, filePath);
+                    showContextMenu(event, filePath, fileType);
                 });
             });
 
@@ -237,30 +254,82 @@
                 //checked
                 const checkbox = row.querySelector('.file-checkbox');
                 checkbox.checked = true;
-
+                toggleButtons();
             }
 
             document.addEventListener('click', function() {
                 contextMenu.classList.add('hidden');
             });
 
-            function showContextMenu(event, filePath) {
+            function showContextMenu(event, filePath, fileType) {
                 contextMenu.style.top = `${event.pageY}px`;
                 contextMenu.style.left = `${event.pageX}px`;
                 contextMenu.classList.remove('hidden');
+                // dir ise open ve delete olmamalı
+                if (fileType === 'dir') {
+                    contextMenu.querySelector('a[data-type="file"]').classList.add('hidden');
+                    contextMenu.querySelector('a[data-type="all"]').classList.remove('hidden');
+                } else {
+                    contextMenu.querySelector('a[data-type="file"]').classList.remove('hidden');
+                    contextMenu.querySelector('a[data-type="all"]').classList.remove('hidden');
+                }
+
                 console.log('File Path:', filePath);
 
                 contextMenu.querySelectorAll('a').forEach(function(menuItem) {
                     menuItem.onclick = function() {
-                        handleMenuItemClick(menuItem.textContent, filePath);
+                        handleMenuItemClick(this.getAttribute('data-action'), filePath);
                     };
                 });
             }
 
             function handleMenuItemClick(action, filePath) {
                 console.log(`Action: ${action}, File Path: ${filePath}`);
-                // Implement your action handling logic here
                 contextMenu.classList.add('hidden');
+                switch (action) {
+                    case 'Open':
+                        const normalizedPath = normalizePath(filePath);
+                        console.log('Normalized Path:', normalizedPath);
+                        $.ajax({
+                            url: '/filemanager/file/preview',
+                            type: 'GET',
+                            data: {
+                                file: normalizedPath
+                            },
+                            success: function(response) {
+                                $.dialog({
+                                    title: 'Preview',
+                                    content: response.message,
+                                    columnClass: 'medium',
+                                    closeIcon: true,
+                                    backgroundDismiss: true,
+                                    onOpenBefore: function() {
+                                        $('.jconfirm-row').addClass(
+                                            'inset-0 flex items-center justify-center bg-[#ccc] bg-opacity-50'
+                                        );
+                                        $('.jconfirm-holder').addClass(
+                                            'flex items-center justify-center');
+                                    },
+                                });
+                            }
+                        });
+                        break;
+                    case 'Download':
+                        const downloadForm = document.querySelector('#download-form');
+                        console.warn('Download Form:', downloadForm);
+                        const downloadInput = downloadForm.querySelector('input[name="_files"]');
+                        console.warn('Download Input:', downloadInput);
+                        downloadInput.value = filePath;
+                        downloadForm.submit();
+                        break;
+                    case 'Delete':
+                        const trashForm = document.querySelector('#delete-form');
+                        const trashInput = trashForm.querySelector('input[name="_files"]');
+                        trashInput.value = filePath;
+                        trashForm.submit();
+                        break;
+                }
+
             }
         }
 
@@ -311,17 +380,7 @@
                 });
             });
 
-            downloadBtn.addEventListener('click', function() {
-                const selectedFiles = getSelectedFiles();
-                console.log('Selected files for download:', selectedFiles);
-                // Implement your download logic here
-            });
 
-            trashBtn.addEventListener('click', function() {
-                const selectedFiles = getSelectedFiles();
-                console.log('Selected files for trash:', selectedFiles);
-                // Implement your trash logic here
-            });
 
 
 
