@@ -334,3 +334,5 @@ formajax_popup.setFormSettings(new FormSettings({ openPopup: true, title: '', co
 
 const formajax_refresh_popup = new FormAjax('.formajax_refresh_popup');
 formajax_refresh_popup.setFormSettings(new FormSettings({ openPopup: true, title: '', refresh: true, refreshTime: 2000 }));
+
+// TODO: delete işleminde ve hata durumunda popup tailwinde uyumlu çalışmıyor.
