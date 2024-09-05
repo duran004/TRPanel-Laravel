@@ -221,7 +221,8 @@ class FileController extends Controller
 
     public function download(Request $request)
     {
-        if (str_contains($request->_files, ',')) {
+        //tek seçimde , ile ayrılmışsa veya klasörse çoklu dosya indirmesi yap
+        if (str_contains($request->_files, ',') || is_dir($request->_files)) {
             $this->downloadMultipleFiles($request);
         } else {
             $this->downloadSingleFile($request);
@@ -258,20 +259,28 @@ class FileController extends Controller
     public function downloadMultipleFiles($request)
     {
         try {
-
-
             $files = explode(',', $request->_files);
             $zip = new \ZipArchive();
             $zipFileName = 'files' . time() . '.zip';
-            $zip->open($zipFileName, \ZipArchive::CREATE | \ZipArchive::OVERWRITE);
-            foreach ($files as $file) {
-                $path = $this->normalizePath($request->path);
-                $file = $path . $file;
-                if (file_exists($file)) {
-                    $zip->addFile($file, $file);
+            if ($zip->open($zipFileName, \ZipArchive::CREATE | \ZipArchive::OVERWRITE) === TRUE) {
+                foreach ($files as $file) {
+                    if (file_exists($file)) {
+                        if (is_dir($file)) {
+                            $this->addFolderToZip($file, $zip);
+                        } else {
+                            $zip->addFile($file, basename($file));
+                        }
+                    }
                 }
+                $zip->close();
+            } else {
+                return response()->json(
+                    [
+                        'status' => false,
+                        'message' => 'Zip File not created'
+                    ]
+                );
             }
-            $zip->close();
             if (file_exists($zipFileName)) {
                 header('Content-Type: application/octet-stream');
                 header("Content-Transfer-Encoding: Binary");
@@ -299,6 +308,96 @@ class FileController extends Controller
                     'message' => $e->getMessage()
                 ]
             );
+        }
+    }
+
+    private function addFolderToZip($folder, &$zip, $parentFolder = '')
+    {
+        $folderName = basename($folder);
+        $zip->addEmptyDir($parentFolder . $folderName);
+        $files = scandir($folder);
+        foreach ($files as $file) {
+            if ($file == '.' || $file == '..') {
+                continue;
+            }
+            $filePath = $folder . DIRECTORY_SEPARATOR . $file;
+            if (is_dir($filePath)) {
+                $this->addFolderToZip($filePath, $zip, $parentFolder . $folderName . DIRECTORY_SEPARATOR);
+            } else {
+                $zip->addFile($filePath, $parentFolder . $folderName . DIRECTORY_SEPARATOR . $file);
+            }
+        }
+    }
+
+    public function destroy(Request $request)
+    {
+        //, varsa yada klasörse çoklu silme yap
+        if (str_contains($request->_files, ',') || is_dir($request->_files)) {
+            $this->deleteMultipleFiles($request);
+        } else {
+            $this->deleteSingleFile($request);
+        }
+    }
+
+    public function deleteSingleFile($request)
+    {
+        $file = $request->_files;
+        if (file_exists($file)) {
+            if (is_dir($file)) {
+                $this->deleteDirectory($file);
+            } else {
+                unlink($file);
+            }
+            return response()->json(
+                [
+                    'status' => true,
+                    'message' => 'File deleted successfully'
+                ]
+            );
+        } else {
+            return response()->json(
+                [
+                    'status' => false,
+                    'message' => 'File not found'
+                ]
+            );
+        }
+    }
+
+    public function deleteMultipleFiles($request)
+    {
+        $files = explode(',', $request->_files);
+        foreach ($files as $file) {
+            if (file_exists($file)) {
+                if (is_dir($file)) {
+                    $this->deleteDirectory($file);
+                } else {
+                    unlink($file);
+                }
+            }
+        }
+        return response()->json(
+            [
+                'status' => true,
+                'message' => 'Files deleted successfully'
+            ]
+        );
+    }
+
+    public function deleteDirectory($dir)
+    {
+        if (is_dir($dir)) {
+            $objects = scandir($dir);
+            foreach ($objects as $object) {
+                if ($object != "." && $object != "..") {
+                    if (is_dir($dir . DIRECTORY_SEPARATOR . $object) && !is_link($dir . DIRECTORY_SEPARATOR . $object)) {
+                        $this->deleteDirectory($dir . DIRECTORY_SEPARATOR . $object);
+                    } else {
+                        unlink($dir . DIRECTORY_SEPARATOR . $object);
+                    }
+                }
+            }
+            rmdir($dir);
         }
     }
 }

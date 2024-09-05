@@ -51,9 +51,15 @@
                 </form>
 
 
-                <x-a href="{{ route('filemanager.trash') }}" id="trash-btn" class="disabled"><i
-                        class="fas fa-trash"></i>
-                    {{ __('Trash') }}</x-a>
+                <form action="{{ route('filemanager.file.destroy', ['path' => request()->get('path')]) }}"
+                    method="POST" class="formajax_delete">
+                    @csrf
+                    @method('DELETE')
+                    <x-input type="hidden" name="_files" id="trash_files" />
+                    <x-button id="trash-btn" class="disabled">
+                        <i class="fas fa-trash"></i> {{ __('Delete') }}
+                    </x-button>
+                </form>
 
             </div>
 

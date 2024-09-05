@@ -22,7 +22,7 @@ Route::group(['prefix' => 'filemanager', 'middleware' => ['auth', 'verified'], '
         Route::post('store/upload', [FileController::class, 'store_upload'])->name('store_upload');
         Route::get('edit/{file}', [FileController::class, 'edit'])->name('edit');
         Route::put('update/{file}', [FileController::class, 'update'])->name('update');
-        Route::delete('destroy/{file}', [FileController::class, 'destroy'])->name('destroy');
+        Route::delete('destroy', [FileController::class, 'destroy'])->name('destroy');
         Route::post('download/{file}', [FileController::class, 'download'])->name('download');
         Route::get('preview/{file}', [FileController::class, 'preview'])->name('preview');
         Route::get('show/{file}', [FileController::class, 'show'])->name('show');
@@ -31,6 +31,8 @@ Route::group(['prefix' => 'filemanager', 'middleware' => ['auth', 'verified'], '
         Route::put('move/{file}', [FileController::class, 'moveFile'])->name('move');
     });
     Route::resource('folder', FolderController::class);
+    // Route::resource('file', FileController::class);
+
     Route::get('upload', [FileController::class, 'upload'])->name('upload');
     Route::post('download', [FileController::class, 'download'])->name('download');
     Route::get('trash', [FileController::class, 'download'])->name('trash');
