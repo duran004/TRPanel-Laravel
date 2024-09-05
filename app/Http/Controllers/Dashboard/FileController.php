@@ -400,4 +400,38 @@ class FileController extends Controller
             rmdir($dir);
         }
     }
+
+    public function preview(Request $request)
+    {
+        $file = $request->file;
+
+
+        $data = [
+            'title' => 'Preview File',
+            'path' => $file,
+            'content' => file_get_contents($file),
+            'file' => $file
+
+
+        ];
+        return response()->json(
+            [
+                'status' => true,
+                'message' => view('dashboard.file.preview', $data)->render()
+            ]
+        );
+    }
+
+    public function preview_update(Request $request)
+    {
+        $file = $request->file;
+        $content = $request->content;
+        file_put_contents($file, $content);
+        return response()->json(
+            [
+                'status' => true,
+                'message' => 'File updated successfully'
+            ]
+        );
+    }
 }

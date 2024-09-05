@@ -151,8 +151,8 @@
                 data-action="Open"> <i class="fas fa-eye"></i> {{ __('Open') }}</a>
             <a href="#" data-type="all" class="block px-4 py-1 text-sm text-gray-800 hover:bg-gray-200"
                 data-action="Download"><i class="fas fa-download"></i>{{ __('Download') }}</a>
-            <a href="#" data-type="all" class="block px-4 py-1 text-sm text-gray-800 hover:bg-gray-200"
-                data-action="Delete"><i class="fas fa-trash"></i> {{ __('Delete') }}</a>
+            {{-- <a href="#" data-type="all" class="block px-4 py-1 text-sm text-gray-800 hover:bg-gray-200"
+                data-action="Delete"><i class="fas fa-trash"></i> {{ __('Delete') }}</a> --}} {{-- dangerous need confirm to delete smthing --}}
         </div>
     </div>
 
