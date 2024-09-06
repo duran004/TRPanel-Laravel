@@ -1,6 +1,6 @@
 class FormAjax {
     constructor(formElement) {
-        this.debug = true;
+        this.debug = false;
         this.dependencies = ['jquery', 'jquery-confirm'];
         this.elementsSelector = 'input, select, textarea, checkbox, radio, button, submit, reset, hidden, password, text, url, email, tel, date, datetime-local, month, week, time, number, range, color';
         this.formElement = formElement;

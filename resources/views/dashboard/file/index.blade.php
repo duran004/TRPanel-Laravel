@@ -146,21 +146,9 @@
             </div>
         </div>
 
-        <div id="context-menu" class="hidden bg-white shadow-md rounded-md py-2">
-            <a href="#" data-type="file" class="block px-4 py-1 text-sm text-gray-800 hover:bg-gray-200"
-                data-action="Open"> <i class="fas fa-eye"></i> {{ __('Edit') }}</a>
-            <a href="#" data-type="all" class="block px-4 py-1 text-sm text-gray-800 hover:bg-gray-200"
-                data-action="Download"><i class="fas fa-download"></i>{{ __('Download') }}</a>
-            <a href="#" data-type="all" class="block px-4 py-1 text-sm text-gray-800 hover:bg-gray-200"
-                data-action="Reload"><i class="fas fa-sync"></i> {{ __('Reload') }}</a>
-            <a href="#" data-type="all" class="block px-4 py-1 text-sm text-gray-800 hover:bg-gray-200"
-                data-action="Rename"><i class="fas fa-edit"></i> {{ __('Rename') }}</a>
-            <a href="#" data-type="all" class="block px-4 py-1 text-sm text-gray-800 hover:bg-gray-200"
-                data-action="Extract"><i class="fas fa-file-archive"></i> {{ __('Extract') }}</a>
 
-        </div>
     </div>
-
+    <x-context-menu />
 
     <script>
         /**
@@ -223,222 +211,15 @@
             trashBtn.classList.toggle('disabled', !anyChecked);
         }
 
-        /**
-         * Context Menu
-         */
-        function initializeContextMenu() {
-            const contextMenu = document.getElementById('context-menu');
-            const files = document.querySelectorAll('.context-menu');
 
-            files.forEach(function(file) {
-                file.addEventListener('contextmenu', function(event) {
-                    event.preventDefault();
-                    const filePath = this.getAttribute('data-path');
-                    const fileType = this.getAttribute('data-type');
-                    unselectAllFiles();
-                    selectRow(this);
-                    showContextMenu(event, filePath, fileType);
-                });
-            });
-
-            function unselectAllFiles() {
-                const checkedfiles = document.querySelectorAll('.file-checkbox:checked');
-                checkedfiles.forEach(function(checkbox) {
-                    checkbox.checked = false;
-                    toggleRowHighlight(checkbox.closest('tr'), false);
-                });
-
-            }
-
-            function selectRow(row) {
-                const selectedRow = document.querySelector('.bg-gray-200');
-                if (selectedRow) {
-                    selectedRow.classList.remove('bg-gray-200');
-                }
-                row.classList.add('bg-gray-200');
-                //checked
-                const checkbox = row.querySelector('.file-checkbox');
-                checkbox.checked = true;
-                toggleButtons();
-            }
-
-            document.addEventListener('click', function() {
-                contextMenu.classList.add('hidden');
-            });
-
-            function showContextMenu(event, filePath, fileType) {
-                contextMenu.style.top = `${event.pageY}px`;
-                contextMenu.style.left = `${event.pageX}px`;
-                contextMenu.classList.remove('hidden');
-                // dir ise open ve delete olmamalı
-                if (fileType === 'dir') {
-                    contextMenu.querySelector('a[data-type="file"]').classList.add('hidden');
-                    contextMenu.querySelector('a[data-type="all"]').classList.remove('hidden');
-                } else {
-                    contextMenu.querySelector('a[data-type="file"]').classList.remove('hidden');
-                    contextMenu.querySelector('a[data-type="all"]').classList.remove('hidden');
-                }
-                if (fileType === 'compressed') {
-                    contextMenu.querySelector('a[data-action="Extract"]').classList.remove('hidden');
-                } else {
-                    contextMenu.querySelector('a[data-action="Extract"]').classList.add('hidden');
-                }
-
-                console.log('File Path:', filePath);
-
-                contextMenu.querySelectorAll('a').forEach(function(menuItem) {
-                    menuItem.onclick = function() {
-                        handleMenuItemClick(this.getAttribute('data-action'), filePath);
-                    };
-                });
-            }
-
-            function handleMenuItemClick(action, filePath) {
-                console.log(`Action: ${action}, File Path: ${filePath}`);
-                contextMenu.classList.add('hidden');
-                switch (action) {
-                    case 'Open':
-                        const normalizedPath = normalizePath(filePath);
-                        console.log('Normalized Path:', normalizedPath);
-                        $.ajax({
-                            url: '/filemanager/file/preview',
-                            type: 'GET',
-                            data: {
-                                file: normalizedPath
-                            },
-                            success: function(response) {
-                                $.dialog({
-                                    title: 'Preview',
-                                    content: response.message,
-                                    columnClass: 'medium',
-                                    closeIcon: true,
-                                    backgroundDismiss: true,
-                                    onOpenBefore: function() {
-                                        $('.jconfirm-row').addClass(
-                                            'inset-0 flex items-center justify-center bg-[#ccc] bg-opacity-50'
-                                        );
-                                        $('.jconfirm-holder').addClass(
-                                            'flex items-center justify-center');
-                                    },
-                                });
-                            }
-                        });
-                        break;
-                    case 'Download':
-                        const downloadForm = document.querySelector('#download-form');
-                        console.warn('Download Form:', downloadForm);
-                        const downloadInput = downloadForm.querySelector('input[name="_files"]');
-                        console.warn('Download Input:', downloadInput);
-                        downloadInput.value = filePath;
-                        downloadForm.submit();
-                        break;
-                    case 'Reload':
-                        window.location.reload();
-                        break;
-                    case 'Rename':
-                        const fileName = filePath.split('\\').pop();
-                        $.alert({
-                            title: 'Rename File',
-                            content: `<input type="text" class="form-control" value="${fileName}" id="new-name">`,
-                            onOpenBefore: function() {
-                                $('.jconfirm-row').addClass(
-                                    'inset-0 flex items-center justify-center bg-[#ccc] bg-opacity-50'
-                                );
-                                $('.jconfirm-holder').addClass(
-                                    'flex items-center justify-center');
-                            },
-                            buttons: {
-                                confirm: {
-                                    text: 'Rename',
-                                    btnClass: 'bg-blue-500 text-white',
-                                    action: function() {
-                                        const newName = document.getElementById('new-name').value;
-                                        $.ajax({
-                                            url: '{{ route('filemanager.file.rename') }}',
-                                            type: 'POST',
-                                            data: {
-                                                file: filePath,
-                                                new_name: newName,
-                                                _token: '{{ csrf_token() }}'
-                                            },
-                                            success: function(response) {
-                                                if (response.status) {
-                                                    window.location.reload();
-                                                } else {
-                                                    $.alert({
-                                                        title: 'Error',
-                                                        content: response.message,
-                                                        type: 'red',
-                                                        onOpenBefore: function() {
-                                                            $('.jconfirm-row').addClass(
-                                                                'inset-0 flex items-center justify-center bg-[#ccc] bg-opacity-50'
-                                                            );
-                                                            $('.jconfirm-holder')
-                                                                .addClass(
-                                                                    'flex items-center justify-center'
-                                                                );
-                                                        },
-                                                    });
-                                                }
-                                            },
-                                            error: function(response) {
-                                                $.alert({
-                                                    title: 'Error',
-                                                    content: response.responseJSON.message,
-                                                    type: 'red',
-                                                    onOpenBefore: function() {
-                                                        $('.jconfirm-row').addClass(
-                                                            'inset-0 flex items-center justify-center bg-[#ccc] bg-opacity-50'
-                                                        );
-                                                        $('.jconfirm-holder').addClass(
-                                                            'flex items-center justify-center'
-                                                        );
-                                                    },
-                                                });
-                                            }
-                                        });
-                                    }
-                                },
-                                cancel: {
-                                    text: 'Cancel',
-                                    btnClass: 'bg-red-500 text-white',
-                                }
-                            },
-                        });
-
-                        break;
-                    case 'Extract':
-                        $.ajax({
-                            url: '/filemanager/file/extract',
-                            type: 'POST',
-                            data: {
-                                file: filePath
-                            },
-                            success: function(response) {
-                                if (response.success) {
-                                    window.location.reload();
-                                } else {
-                                    alert(response.message);
-                                }
-                            }
-                        });
-                        break;
-                    default:
-                        break;
-                }
-
-            }
-        }
 
         document.addEventListener('DOMContentLoaded', function() {
             initializeDoubleClick();
-            initializeContextMenu();
         });
 
         window.addEventListener('pageshow', function(event) {
             if (event.persisted) {
                 initializeDoubleClick();
-                initializeContextMenu();
             }
         });
         document.addEventListener('DOMContentLoaded', function() {

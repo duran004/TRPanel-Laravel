@@ -9,6 +9,7 @@ class FileController extends Controller
 {
     public string $basePath;
     public array $ignoreFiles = ['.', '..'];
+    private array $zipFiles = ['zip', 'rar', '7z', 'tar'];
 
     public function __construct()
     {
@@ -75,7 +76,7 @@ class FileController extends Controller
                     $data->$file = new \stdClass();
                     $data->$file->name = $file;
                     $data->$file->path = $path;
-                    $data->$file->type = is_dir($path) ? 'dir' : 'file';
+                    $data->$file->type =  in_array(pathinfo($path, PATHINFO_EXTENSION), $this->zipFiles) ? 'zip' : (is_dir($path) ? 'dir' : 'file');
                     $data->$file->size = $this->formatSizeUnits(filesize($path));
                     $data->$file->last_modified = date('Y-m-d H:i:s', filemtime($path));
                     $data->$file->permissions = substr(sprintf('%o', fileperms($path)), -4);
