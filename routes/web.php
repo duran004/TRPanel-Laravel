@@ -27,6 +27,8 @@ Route::group(['prefix' => 'filemanager', 'middleware' => ['auth', 'verified'], '
         Route::post('rename', [FileController::class, 'rename'])->name('rename');
         Route::post('extract', [FileController::class, 'extract'])->name('extract');
         Route::post('compress', [FileController::class, 'compress'])->name('compress');
+        Route::post('permissions', [FileController::class, 'permissions'])->name('permissions');
+        Route::post('permissions_update', [FileController::class, 'permissions_update'])->name('permissions_update');
         // Route::get('search/{query}', [FileController::class, 'search'])->name('search');
         // Route::get('move/{file}', [FileController::class, 'move'])->name('move');
         // Route::put('move/{file}', [FileController::class, 'moveFile'])->name('move');

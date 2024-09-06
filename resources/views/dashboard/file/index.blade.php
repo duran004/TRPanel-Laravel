@@ -73,6 +73,16 @@
                     </x-button>
                 </form>
 
+                <form id="permissions-form"
+                    action="{{ route('filemanager.file.permissions', ['path' => request()->get('path')]) }}"
+                    method="POST" class="formajax_popup">
+                    @csrf
+                    <x-input type="hidden" name="_files" id="permissions_files" />
+                    <x-button id="permissions-btn" class="disabled">
+                        <i class="fas fa-key"></i> {{ __('Permissions') }}
+                    </x-button>
+                </form>
+
             </div>
 
         </div>
@@ -217,11 +227,13 @@
             const downloadBtn = document.getElementById('download-btn');
             const trashBtn = document.getElementById('trash-btn');
             const compressBtn = document.getElementById('compress-btn');
-            console.log(compressBtn);
+            const permissionsBtn = document.getElementById('permissions-btn');
             const anyChecked = Array.from(document.querySelectorAll('.file-checkbox')).some(checkbox => checkbox.checked);
             downloadBtn.classList.toggle('disabled', !anyChecked);
             trashBtn.classList.toggle('disabled', !anyChecked);
             compressBtn.classList.toggle('disabled', !anyChecked);
+            permissionsBtn.classList.toggle('disabled', !anyChecked);
+
         }
 
 
@@ -241,6 +253,7 @@
             const selectableRows = document.querySelectorAll('.selectable-row');
             const downloadBtn = document.getElementById('download-btn');
             const trashBtn = document.getElementById('trash-btn');
+
 
             let lastChecked = null;
 
@@ -302,9 +315,11 @@
                 const downloadFilesInput = document.getElementById('download_files');
                 const trashFilesInput = document.getElementById('trash_files');
                 const compressFilesInput = document.getElementById('compress_files');
+                const permissionsFilesInput = document.getElementById('permissions_files');
                 downloadFilesInput.value = selectedFiles.join(',');
                 trashFilesInput.value = selectedFiles.join(',');
                 compressFilesInput.value = selectedFiles.join(',');
+                permissionsFilesInput.value = selectedFiles.join(',');
             }
         });
     </script>

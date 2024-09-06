@@ -548,4 +548,59 @@ class FileController extends Controller
             );
         }
     }
+
+    public function permissions(Request $request)
+    {
+        $files = $request->_files;
+        if (str_contains($files, ',')) {
+            $files = explode(',', $files);
+        } else {
+            $files = [$files];
+        }
+        $permissions = $request->permissions;
+        $data = [
+            'title' => 'Permissions',
+            'files' => $files,
+            'files_str' => $request->_files,
+            'permissions' => $permissions
+        ];
+        return response()->json(
+            [
+                'status' => true,
+                'message' => view('dashboard.file.permissions', $data)->render()
+            ]
+        );
+    }
+    public function permissions_update(Request $request)
+    {
+        $files = $request->_files;
+        if (str_contains($files, ',')) {
+            $files = explode(',', $files);
+        } else {
+            $files = [$files];
+        }
+        $permissions = $request->permissions;
+        $affectedFiles = [];
+        foreach ($files as $file) {
+            $file = $this->normalizePath($file);
+            if (file_exists($file)) {
+                chmod($file, octdec($permissions));
+                $affectedFiles[] = $file;
+            }
+            //klasörse altındaki dosyaları da etkile
+            if (is_dir($file)) {
+                $objects = new \RecursiveIteratorIterator(new \RecursiveDirectoryIterator($file), \RecursiveIteratorIterator::SELF_FIRST);
+                foreach ($objects as $name => $object) {
+                    chmod($name, octdec($permissions));
+                    $affectedFiles[] = $name;
+                }
+            }
+        }
+        return response()->json(
+            [
+                'status' => true,
+                'message' => 'Permissions updated successfully '
+            ]
+        );
+    }
 }
