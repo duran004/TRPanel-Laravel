@@ -25,6 +25,8 @@ Route::group(['prefix' => 'filemanager', 'middleware' => ['auth', 'verified'], '
         Route::get('preview', [FileController::class, 'preview'])->name('preview');
         Route::post('preview', [FileController::class, 'preview_update'])->name('preview_update');
         Route::post('rename', [FileController::class, 'rename'])->name('rename');
+        Route::post('extract', [FileController::class, 'extract'])->name('extract');
+        Route::post('compress', [FileController::class, 'compress'])->name('compress');
         // Route::get('search/{query}', [FileController::class, 'search'])->name('search');
         // Route::get('move/{file}', [FileController::class, 'move'])->name('move');
         // Route::put('move/{file}', [FileController::class, 'moveFile'])->name('move');
@@ -36,5 +38,9 @@ Route::group(['prefix' => 'filemanager', 'middleware' => ['auth', 'verified'], '
     Route::post('download', [FileController::class, 'download'])->name('download');
     Route::get('trash', [FileController::class, 'download'])->name('trash');
 });
+
+Route::get('/tmp/{file}', function () {
+    return response()->file(base_path('tmp') . '/' . request()->file);
+})->name('tmp');
 
 require __DIR__ . '/auth.php';

@@ -58,8 +58,18 @@
                     @csrf
                     @method('DELETE')
                     <x-input type="hidden" name="_files" id="trash_files" />
-                    <x-button id="trash-btn" class="disabled">
+                    <x-button id="trash-btn" class="bg-red-600 disabled hover:bg-red-700 text-white">
                         <i class="fas fa-trash"></i> {{ __('Delete') }}
+                    </x-button>
+                </form>
+
+                <form id="compress-form"
+                    action="{{ route('filemanager.file.compress', ['path' => request()->get('path')]) }}"
+                    method="POST" class="formajax_refresh_popup">
+                    @csrf
+                    <x-input type="hidden" name="_files" id="compress_files" />
+                    <x-button id="compress-btn" class="disabled">
+                        <i class="fas fa-compress"></i> {{ __('Compress') }}
                     </x-button>
                 </form>
 
@@ -206,9 +216,12 @@
         function toggleButtons() {
             const downloadBtn = document.getElementById('download-btn');
             const trashBtn = document.getElementById('trash-btn');
+            const compressBtn = document.getElementById('compress-btn');
+            console.log(compressBtn);
             const anyChecked = Array.from(document.querySelectorAll('.file-checkbox')).some(checkbox => checkbox.checked);
             downloadBtn.classList.toggle('disabled', !anyChecked);
             trashBtn.classList.toggle('disabled', !anyChecked);
+            compressBtn.classList.toggle('disabled', !anyChecked);
         }
 
 
@@ -229,19 +242,21 @@
             const downloadBtn = document.getElementById('download-btn');
             const trashBtn = document.getElementById('trash-btn');
 
+            let lastChecked = null;
+
             selectAllCheckbox.addEventListener('change', function() {
                 fileCheckboxes.forEach(checkbox => {
                     checkbox.checked = selectAllCheckbox.checked;
                     toggleRowHighlight(checkbox.closest('tr'), checkbox.checked);
                 });
-                toggleActionButtons();
+                toggleButtons();
                 selectedFilesProcess();
             });
 
             fileCheckboxes.forEach(checkbox => {
                 checkbox.addEventListener('change', function() {
                     toggleRowHighlight(checkbox.closest('tr'), checkbox.checked);
-                    toggleActionButtons();
+                    toggleButtons();
                     selectedFilesProcess();
                 });
             });
@@ -250,23 +265,31 @@
                 row.addEventListener('click', function(event) {
                     if (event.target.tagName !== 'INPUT') {
                         const checkbox = row.querySelector('.file-checkbox');
-                        checkbox.checked = !checkbox.checked;
+                        if (event.ctrlKey || event.metaKey) {
+                            // CTRL key for multiple selection
+                            checkbox.checked = !checkbox.checked;
+                        } else if (event.shiftKey) {
+                            // SHIFT key for range selection
+                            let start = Array.from(fileCheckboxes).indexOf(lastChecked);
+                            let end = Array.from(fileCheckboxes).indexOf(checkbox);
+                            if (start > end)[start, end] = [end, start];
+                            for (let i = start; i <= end; i++) {
+                                fileCheckboxes[i].checked = true;
+                                toggleRowHighlight(fileCheckboxes[i].closest('tr'), true);
+                            }
+                        } else {
+                            // Single selection
+                            checkbox.checked = !checkbox.checked;
+                        }
+                        lastChecked = checkbox;
                         toggleRowHighlight(row, checkbox.checked);
-                        toggleActionButtons();
+                        toggleButtons();
                         selectedFilesProcess();
                     }
                 });
             });
 
 
-
-
-
-            function toggleActionButtons() {
-                const anyChecked = Array.from(fileCheckboxes).some(checkbox => checkbox.checked);
-                downloadBtn.classList.toggle('disabled', !anyChecked);
-                trashBtn.classList.toggle('disabled', !anyChecked);
-            }
 
             function getSelectedFiles() {
                 return Array.from(fileCheckboxes)
@@ -278,8 +301,10 @@
                 const selectedFiles = getSelectedFiles();
                 const downloadFilesInput = document.getElementById('download_files');
                 const trashFilesInput = document.getElementById('trash_files');
+                const compressFilesInput = document.getElementById('compress_files');
                 downloadFilesInput.value = selectedFiles.join(',');
                 trashFilesInput.value = selectedFiles.join(',');
+                compressFilesInput.value = selectedFiles.join(',');
             }
         });
     </script>

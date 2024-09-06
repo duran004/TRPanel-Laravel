@@ -9,8 +9,8 @@
         data-action="Rename"><i class="fas fa-edit"></i> {{ __('Rename') }}</a>
     <a href="#" data-type="zip" class="block px-4 py-1 text-sm text-gray-800 hover:bg-gray-200"
         data-action="Extract"><i class="fas fa-file-archive"></i> {{ __('Extract') }}</a>
-    <a href="#" data-type="zip,dir,file" class="block px-4 py-1 text-sm text-gray-800 hover:bg-gray-200"
-        data-action="Compress"><i class="fas fa-compress"></i> {{ __('Compress') }}</a>
+    {{-- <a href="#" data-type="zip,dir,file" class="block px-4 py-1 text-sm text-gray-800 hover:bg-gray-200"
+        data-action="Compress"><i class="fas fa-compress"></i> {{ __('Compress') }}</a> --}}
 </div>
 
 <script>
@@ -195,21 +195,198 @@
 
                     break;
                 case 'Extract':
-                    $.ajax({
-                        url: '/filemanager/file/extract',
-                        type: 'POST',
-                        data: {
-                            file: filePath
+                    const extractPath = filePath.split('\\').slice(0, -1).join('\\');
+                    $.alert({
+                        title: '{{ __('Extract Path') }}',
+                        content: `{{ __('It can override existing files. Are you sure to extract?') }}<br><br>
+                        <input type="text" class="form-control w-full" value="${extractPath}" name="path" id="extract-path">`,
+                        onOpenBefore: function() {
+                            $('.jconfirm-row').addClass(
+                                'inset-0 flex items-center justify-center bg-[#ccc] bg-opacity-50'
+                            );
+                            $('.jconfirm-holder').addClass(
+                                'flex items-center justify-center');
                         },
-                        success: function(response) {
-                            if (response.success) {
-                                window.location.reload();
-                            } else {
-                                alert(response.message);
+                        buttons: {
+                            confirm: {
+                                text: 'Extract',
+                                btnClass: 'bg-blue-500 text-white',
+                                action: function() {
+                                    const extractPath = document.getElementById('extract-path').value;
+                                    $.ajax({
+                                        url: '{{ route('filemanager.file.extract') }}',
+                                        type: 'POST',
+                                        data: {
+                                            path: extractPath,
+                                            file: filePath,
+                                            _token: '{{ csrf_token() }}'
+                                        },
+                                        success: function(response) {
+                                            if (response.status) {
+                                                $.alert({
+                                                    title: 'Success',
+                                                    content: response.message,
+                                                    type: 'green',
+                                                    onOpenBefore: function() {
+                                                        $('.jconfirm-row').addClass(
+                                                            'inset-0 flex items-center justify-center bg-[#ccc] bg-opacity-50'
+                                                        );
+                                                        $('.jconfirm-holder')
+                                                            .addClass(
+                                                                'flex items-center justify-center'
+                                                            );
+                                                    },
+                                                    buttons: {
+                                                        confirm: {
+                                                            text: 'OK',
+                                                            btnClass: 'bg-green-500 text-white',
+                                                            action: function() {
+                                                                window.location
+                                                                    .reload();
+                                                            }
+                                                        }
+                                                    }
+                                                });
+                                                // window.location.reload();
+                                            } else {
+                                                $.alert({
+                                                    title: 'Error',
+                                                    content: response.message,
+                                                    type: 'red',
+                                                    onOpenBefore: function() {
+                                                        $('.jconfirm-row').addClass(
+                                                            'inset-0 flex items-center justify-center bg-[#ccc] bg-opacity-50'
+                                                        );
+                                                        $('.jconfirm-holder')
+                                                            .addClass(
+                                                                'flex items-center justify-center'
+                                                            );
+                                                    },
+                                                });
+                                            }
+                                        },
+                                        error: function(response) {
+                                            $.alert({
+                                                title: 'Error',
+                                                content: response.responseJSON.message,
+                                                type: 'red',
+                                                onOpenBefore: function() {
+                                                    $('.jconfirm-row').addClass(
+                                                        'inset-0 flex items-center justify-center bg-[#ccc] bg-opacity-50'
+                                                    );
+                                                    $('.jconfirm-holder').addClass(
+                                                        'flex items-center justify-center'
+                                                    );
+                                                },
+                                            });
+                                        }
+                                    });
+                                }
+                            },
+                            cancel: {
+                                text: 'Cancel',
+                                btnClass: 'bg-red-500 text-white',
                             }
-                        }
+                        },
                     });
                     break;
+
+                    const selectedFiles = getSelectedFiles();
+                    const compressPath = filePath.split('\\').slice(0, -1).join('\\');
+                    $.alert({
+                        title: '{{ __('Compress File Path') }}',
+                        content: `<input type="text" class="form-control w-full" value="${compressPath}" name="path" id="compress-path">`,
+                        onOpenBefore: function() {
+                            $('.jconfirm-row').addClass(
+                                'inset-0 flex items-center justify-center bg-[#ccc] bg-opacity-50'
+                            );
+                            $('.jconfirm-holder').addClass(
+                                'flex items-center justify-center');
+                        },
+                        buttons: {
+                            confirm: {
+                                text: 'Compress',
+                                btnClass: 'bg-blue-500 text-white',
+                                action: function() {
+                                    const compressPath = document.getElementById('compress-path').value;
+                                    $.ajax({
+                                        url: '{{ route('filemanager.file.compress') }}',
+                                        type: 'POST',
+                                        data: {
+                                            path: compressPath,
+                                            files: selectedFiles,
+                                            _token: '{{ csrf_token() }}'
+                                        },
+                                        success: function(response) {
+                                            if (response.status) {
+                                                $.alert({
+                                                    title: 'Success',
+                                                    content: response.message,
+                                                    type: 'green',
+                                                    onOpenBefore: function() {
+                                                        $('.jconfirm-row').addClass(
+                                                            'inset-0 flex items-center justify-center bg-[#ccc] bg-opacity-50'
+                                                        );
+                                                        $('.jconfirm-holder')
+                                                            .addClass(
+                                                                'flex items-center justify-center'
+                                                            );
+                                                    },
+                                                    buttons: {
+                                                        confirm: {
+                                                            text: 'OK',
+                                                            btnClass: 'bg-green-500 text-white',
+                                                            action: function() {
+                                                                window.location
+                                                                    .reload();
+                                                            }
+                                                        }
+                                                    }
+                                                });
+                                                // window.location.reload();
+                                            } else {
+                                                $.alert({
+                                                    title: 'Error',
+                                                    content: response.message,
+                                                    type: 'red',
+                                                    onOpenBefore: function() {
+                                                        $('.jconfirm-row').addClass(
+                                                            'inset-0 flex items-center justify-center bg-[#ccc] bg-opacity-50'
+                                                        );
+                                                        $('.jconfirm-holder')
+                                                            .addClass(
+                                                                'flex items-center justify-center'
+                                                            );
+                                                    },
+                                                });
+                                            }
+                                        },
+                                        error: function(response) {
+                                            $.alert({
+                                                title: 'Error',
+                                                content: response.responseJSON.message,
+                                                type: 'red',
+                                                onOpenBefore: function() {
+                                                    $('.jconfirm-row').addClass(
+                                                        'inset-0 flex items-center justify-center bg-[#ccc] bg-opacity-50'
+                                                    );
+                                                    $('.jconfirm-holder').addClass(
+                                                        'flex items-center justify-center'
+                                                    );
+                                                },
+                                            });
+                                        }
+                                    });
+                                }
+                            },
+                            cancel: {
+                                text: 'Cancel',
+                                btnClass: 'bg-red-500 text-white',
+                            }
+                        },
+                    });
+                    break;
+
                 default:
                     break;
             }

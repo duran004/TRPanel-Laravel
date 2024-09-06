@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Dashboard;
 
+use App\Exceptions\ClientException;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 
@@ -10,10 +11,12 @@ class FileController extends Controller
     public string $basePath;
     public array $ignoreFiles = ['.', '..'];
     private array $zipFiles = ['zip', 'rar', '7z', 'tar'];
+    private string $tmp = '';
 
     public function __construct()
     {
         $this->basePath = base_path();
+        $this->tmp = base_path('tmp') . '/';
     }
 
     public function index()
@@ -70,9 +73,7 @@ class FileController extends Controller
         foreach ($files as $file) {
             if (!in_array($file, $this->ignoreFiles)) {
                 try {
-
                     $path = $base_path .  '\\' . $file;
-                    // dd($path);
                     $data->$file = new \stdClass();
                     $data->$file->name = $file;
                     $data->$file->path = $path;
@@ -81,11 +82,10 @@ class FileController extends Controller
                     $data->$file->last_modified = date('Y-m-d H:i:s', filemtime($path));
                     $data->$file->permissions = substr(sprintf('%o', fileperms($path)), -4);
                 } catch (\Exception $e) {
-                    dd($e, $file);
+                    throw new ClientException($e->getMessage());
                 }
             }
         }
-        // dd($data);
         return $data;
     }
 
@@ -262,8 +262,8 @@ class FileController extends Controller
         try {
             $files = explode(',', $request->_files);
             $zip = new \ZipArchive();
-            $zipFileName = 'files' . time() . '.zip';
-            if ($zip->open($zipFileName, \ZipArchive::CREATE | \ZipArchive::OVERWRITE) === TRUE) {
+            $zipFileName = 'Download-Files-' . date('Y-m-d-H-i-s') . '.zip';
+            if ($zip->open($this->tmp . $zipFileName, \ZipArchive::CREATE | \ZipArchive::OVERWRITE) === TRUE) {
                 foreach ($files as $file) {
                     if (file_exists($file)) {
                         if (is_dir($file)) {
@@ -274,31 +274,31 @@ class FileController extends Controller
                     }
                 }
                 $zip->close();
+                if (file_exists($this->tmp . $zipFileName)) {
+                    header('Content-Type: application/octet-stream');
+                    header("Content-Transfer-Encoding: Binary");
+                    header("Content-disposition: attachment; filename=\"" . $this->tmp . $zipFileName . "\"");
+                    readfile($this->tmp . $zipFileName);
+                    unlink($this->tmp . $zipFileName);
+                    return response()->json(
+                        [
+                            'status' => true,
+                            'message' => 'Files downloaded successfully'
+                        ]
+                    );
+                } else {
+                    return response()->json(
+                        [
+                            'status' => false,
+                            'message' => 'Zip File not found'
+                        ]
+                    );
+                }
             } else {
                 return response()->json(
                     [
                         'status' => false,
                         'message' => 'Zip File not created'
-                    ]
-                );
-            }
-            if (file_exists($zipFileName)) {
-                header('Content-Type: application/octet-stream');
-                header("Content-Transfer-Encoding: Binary");
-                header("Content-disposition: attachment; filename=\"" . $zipFileName . "\"");
-                readfile($zipFileName);
-                unlink($zipFileName);
-                return response()->json(
-                    [
-                        'status' => true,
-                        'message' => 'Files downloaded successfully'
-                    ]
-                );
-            } else {
-                return response()->json(
-                    [
-                        'status' => false,
-                        'message' => 'Zip File not found'
                     ]
                 );
             }
@@ -457,6 +457,93 @@ class FileController extends Controller
                 [
                     'status' => false,
                     'message' => 'File not found'
+                ]
+            );
+        }
+    }
+
+    public function extract(Request $request)
+    {
+        $file = $request->file;
+        $path = $request->path;
+        $path = $this->normalizePath($path);
+        $this->basePath = $this->normalizePath($this->basePath);
+        $file = $this->normalizePath($file);
+        $zip = new \ZipArchive;
+        if ($zip->open($file) === TRUE) {
+            $zip->extractTo($path);
+            $zip->close();
+            return response()->json(
+                [
+                    'status' => true,
+                    'message' => 'File extracted successfully'
+                ]
+            );
+        } else {
+            return response()->json(
+                [
+                    'status' => false,
+                    'message' => 'File not found'
+                ]
+            );
+        }
+    }
+
+    public function compress(Request $request)
+    {
+        try {
+            $files = $request->_files;
+            if (str_contains($files, ',')) {
+                $files = explode(',', $files);
+            } else {
+                $files = [$files];
+            }
+            $path = $request->path;
+            $path = $this->normalizePath($path);
+            $this->basePath = $this->normalizePath($this->basePath);
+            $zip = new \ZipArchive();
+            $zipFileName = 'Compressed-Files-' . date('Y-m-d-H-i-s') . '.zip';
+            if ($zip->open($this->tmp . $zipFileName, \ZipArchive::CREATE | \ZipArchive::OVERWRITE) === TRUE) {
+                foreach ($files as $file) {
+                    if (file_exists($file)) {
+                        if (is_dir($file)) {
+                            $this->addFolderToZip($file, $zip);
+                        } else {
+                            $zip->addFile($file, basename($file));
+                        }
+                    }
+                }
+                $zip->close();
+                //move zip file to destination path
+                if (rename($this->tmp . $zipFileName, $path . '/' . $zipFileName)) {
+                    return response()->json(
+                        [
+                            'status' => true,
+                            'message' => 'Files compressed successfully',
+                            'zipFileName' => $zipFileName
+                        ]
+                    );
+                } else {
+                    return response()->json(
+                        [
+                            'status' => false,
+                            'message' => 'Failed to move zip file to destination path'
+                        ]
+                    );
+                }
+            } else {
+                return response()->json(
+                    [
+                        'status' => false,
+                        'message' => 'Zip File not created'
+                    ]
+                );
+            }
+        } catch (\Exception $e) {
+            return response()->json(
+                [
+                    'status' => false,
+                    'message' => $e->getMessage()
                 ]
             );
         }
