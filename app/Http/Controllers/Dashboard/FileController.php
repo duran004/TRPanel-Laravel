@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Dashboard;
 
 use App\Exceptions\ClientException;
 use App\Http\Controllers\Controller;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Http\Request;
 
 class FileController extends Controller
@@ -12,10 +13,15 @@ class FileController extends Controller
     public array $ignoreFiles = ['.', '..'];
     private array $zipFiles = ['zip', 'rar', '7z', 'tar'];
     private string $tmp = '';
+    private bool $isLinux = false;
 
     public function __construct()
     {
-        $this->basePath = base_path();
+        $this->isLinux = strtoupper(substr(PHP_OS, 0, 3)) !== 'WIN';
+        $userFolder = Auth::user()->folder;
+        $this->basePath = $this->isLinux ? env('LINUX_HOME')  . $userFolder : env('WINDOWS_HOME') . $userFolder;
+        // \dd($this->basePath);
+        // $this->basePath = base_path();
         $this->tmp = base_path('tmp') . '/';
     }
 
@@ -92,11 +98,12 @@ class FileController extends Controller
     public function checkPath($currentPath)
     {
         // Laravel uygulamasının temel yolunu al
-        $basePath = base_path();
+        $basePath = $this->basePath;
 
         // Gerçek yolları al
         $realCurrentPath = realpath($currentPath);
         $realBasePath = realpath($basePath);
+
 
         // Eğer yollar geçerli değilse hata döndür
         if ($realCurrentPath === false || $realBasePath === false) {
@@ -105,8 +112,8 @@ class FileController extends Controller
 
         // Geçerli yolun temel yolun üstüne çıkıp çıkmadığını kontrol et
         if (strpos($realCurrentPath, $realBasePath) !== 0) {
-            //throw new \App\Exceptions\ClientException("Geçersiz yol.");
-            die(redirect()->route('filemanager.index', ['path' => '']));
+            // throw new \App\Exceptions\ClientException("Geçersiz yol.");
+            return (redirect()->route('filemanager.index', ['path' => ''])->send());
         }
 
         return true;
@@ -191,7 +198,7 @@ class FileController extends Controller
 
     public function upload(Request $request)
     {
-        $path = $request->path;
+        $path = $request->path ?? $this->basePath;
         $path = $this->normalizePath($path);
         $this->basePath = $this->normalizePath($this->basePath);
 
@@ -498,7 +505,7 @@ class FileController extends Controller
             } else {
                 $files = [$files];
             }
-            $path = $request->path;
+            $path = $request->path ?? $this->basePath;
             $path = $this->normalizePath($path);
             $this->basePath = $this->normalizePath($this->basePath);
             $zip = new \ZipArchive();

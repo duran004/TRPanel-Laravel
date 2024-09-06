@@ -4,9 +4,9 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Dashboard\FolderController;
 use App\Http\Controllers\Dashboard\FileController;
 
-Route::view('/', 'welcome');
 
-Route::view('dashboard', 'dashboard')
+
+Route::view('', 'dashboard')
     ->middleware(['auth', 'verified'])
     ->name('dashboard');
 

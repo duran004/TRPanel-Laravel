@@ -4,14 +4,18 @@ namespace App\Http\Controllers\Dashboard;
 
 use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
+use Illuminate\Support\Facades\Auth;
 
 class FolderController extends Controller
 {
     private string $basePath;
-
+    private bool $isLinux;
     public function __construct()
     {
-        $this->basePath = dirname(__DIR__, 4) . "/";
+        $this->isLinux = strtoupper(substr(PHP_OS, 0, 3)) !== 'WIN';
+        $userFolder = Auth::user()->folder;
+        $this->basePath = $this->isLinux ? env('LINUX_HOME')  . $userFolder : env('WINDOWS_HOME') . $userFolder;
+        $this->basePath = $this->normalizePath($this->basePath) . "/";
         //current path base pathin yukarısına çıkamaz
     }
 
@@ -76,7 +80,7 @@ class FolderController extends Controller
     }
     public function normalizePath(string $path)
     {
-        return rtrim(str_replace('\\', '/', $path),"/");
+        return rtrim(str_replace('\\', '/', $path), "/");
     }
 
     /**

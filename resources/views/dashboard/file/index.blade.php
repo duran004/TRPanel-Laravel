@@ -91,7 +91,7 @@
                 <div class="flex items center text-sm">
                     <form action="{{ route('filemanager.index') }}" method="GET" class="flex items-center">
                         <x-input type="text" name="path" placeholder="Enter Path"
-                            value="{{ request()->get('path') }}" />
+                            value="{{ request()->get('path') ?? $basePath }}" class="w-full" />
                         <x-button>{{ __('Go') }}</x-button>
                     </form>
                 </div>
