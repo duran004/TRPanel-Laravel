@@ -123,7 +123,7 @@
                     window.location.reload();
                     break;
                 case 'Rename':
-                    const fileName = filePath.split('\\').pop();
+                    const fileName = filePath.split('//').pop();
                     $.alert({
                         title: 'Rename File',
                         content: `<input type="text" class="form-control" value="${fileName}" id="new-name">`,
@@ -195,7 +195,8 @@
 
                     break;
                 case 'Extract':
-                    const extractPath = filePath.split('\\').slice(0, -1).join('\\');
+                    const extractPath = filePath.split('//').slice(0, -1).join('//');
+                    console.warn(filePath);
                     $.alert({
                         title: '{{ __('Extract Path') }}',
                         content: `{{ __('It can override existing files. Are you sure to extract?') }}<br><br>
@@ -292,7 +293,7 @@
                     break;
 
                     const selectedFiles = getSelectedFiles();
-                    const compressPath = filePath.split('\\').slice(0, -1).join('\\');
+                    const compressPath = filePath.split('//').slice(0, -1).join('//');
                     $.alert({
                         title: '{{ __('Compress File Path') }}',
                         content: `<input type="text" class="form-control w-full" value="${compressPath}" name="path" id="compress-path">`,
