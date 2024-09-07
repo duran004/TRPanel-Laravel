@@ -192,6 +192,7 @@
                     const dirPath = this.getAttribute('data-path');
                     console.log('Selected Directory Path:', dirPath);
                     const normalizedPath = normalizePath(dirPath);
+                    console.log('/filemanager?path=' + normalizedPath);
                     window.location.href = '/filemanager?path=' + normalizedPath;
                 });
             });
@@ -206,21 +207,31 @@
         }
 
         function normalizePath(path) {
+            // Check if the path is Windows or Unix-based
             const isWindows = path.includes("\\");
+
+            // Split the path by the relevant separator
             const segments = path.split(isWindows ? /[\\/]/ : "/");
             const normalizedSegments = [];
 
+            // Traverse through the segments
             segments.forEach(segment => {
                 if (segment === "..") {
+                    // Go up one level if possible
                     if (normalizedSegments.length > 0) {
                         normalizedSegments.pop();
                     }
                 } else if (segment !== "." && segment !== "") {
+                    // Push the segment if it's not empty or current directory
                     normalizedSegments.push(segment);
                 }
             });
 
-            return (isWindows ? normalizedSegments.join("\\") : normalizedSegments.join("/"));
+            // Join the segments with the appropriate separator
+            const normalizedPath = (isWindows ? normalizedSegments.join("\\") : normalizedSegments.join("/"));
+
+            // Preserve leading '/' if the original path had one
+            return path.startsWith("/") ? "/" + normalizedPath : normalizedPath;
         }
 
         function toggleButtons() {

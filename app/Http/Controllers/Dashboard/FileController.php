@@ -29,7 +29,7 @@ class FileController extends Controller
     {
         $path = $_GET['path'] ?? '';
         if ($path == '') {
-            $path = $this->basePath . "\\";
+            $path = $this->basePath . "//";
         }
         $files = $this->getFiles($path);
         $path = $this->normalizePath($path);
@@ -79,7 +79,7 @@ class FileController extends Controller
         foreach ($files as $file) {
             if (!in_array($file, $this->ignoreFiles)) {
                 try {
-                    $path = $base_path .  '\\' . $file;
+                    $path = $base_path .  '/' . $file;
                     $data->$file = new \stdClass();
                     $data->$file->name = $file;
                     $data->$file->path = $path;
