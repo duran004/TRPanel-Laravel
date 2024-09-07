@@ -29,16 +29,21 @@ new #[Layout('layouts.guest')] class extends Component {
 
         $validated['password'] = Hash::make($validated['password']);
         // eğer linux ise home altına windows ise C:/temp/ altına klasör oluştur
-        $userFolder = env('LINUX_HOME') . $validated['folder'];
-        if (strtoupper(substr(PHP_OS, 0, 3)) === 'WIN') {
-            $userFolder = env('WINDOWS_HOME') . $validated['folder'];
-        }
-        if (!file_exists($userFolder)) {
-            $oldUmask = umask(0); // Geçici olarak dosya izinlerini değiştir
-            mkdir($userFolder, 0777, true);
-            umask($oldUmask); // Eski dosya izinlerini geri yükle
-        } else {
-            $this->addError('folder', 'Folder already exists');
+        try {
+            $userFolder = env('LINUX_HOME') . $validated['folder'];
+            if (strtoupper(substr(PHP_OS, 0, 3)) === 'WIN') {
+                $userFolder = env('WINDOWS_HOME') . $validated['folder'];
+            }
+            if (!file_exists($userFolder)) {
+                $oldUmask = umask(0); // Geçici olarak dosya izinlerini değiştir
+                mkdir($userFolder, 0777, true);
+                umask($oldUmask); // Eski dosya izinlerini geri yükle
+            } else {
+                $this->addError('folder', 'Folder already exists');
+                return;
+            }
+        } catch (Exception $e) {
+            $this->addError('folder', 'Folder could not be created ' . $e->getMessage() . ' ' . $e->getLine() . ' ' . $e->getFile() . ' ' . $userFolder);
             return;
         }
 
