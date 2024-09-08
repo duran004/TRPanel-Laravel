@@ -123,10 +123,13 @@
                     window.location.reload();
                     break;
                 case 'Rename':
+                    console.log('File Path:', filePath);
                     const fileName = filePath.split('//').pop();
+                    console.log('File Name:', fileName);
+
                     $.alert({
                         title: 'Rename File',
-                        content: `<input type="text" class="form-control" value="${fileName}" id="new-name">`,
+                        content: `<input type="text" class="w-full my-2" value="${fileName}" id="new-name">`,
                         onOpenBefore: function() {
                             $('.jconfirm-row').addClass(
                                 'inset-0 flex items-center justify-center bg-[#ccc] bg-opacity-50'

@@ -453,6 +453,7 @@ class FileController extends Controller
         $newName = $this->normalizePath($newName);
         if (file_exists($oldName)) {
             rename($oldName, $newName);
+            // @TODO: linuxda hata var rename(/home/ArmandLittle/test2/Duran Can YILMAZ,/home/ArmandLittle/test2//home/ArmandLittle/test2/Duran Can YILMAZ.php): No such file or directory
             return response()->json(
                 [
                     'status' => true,
