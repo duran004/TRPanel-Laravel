@@ -65,6 +65,13 @@ new #[Layout('layouts.guest')] class extends Component {
                 $phpFpmConfigContent = file_get_contents(base_path('server/php/php-fpm.conf'));
                 $phpFpmConfigContent = str_replace('TRPANEL_USER', $username, $phpFpmConfigContent);
                 $phpFpmConfigFile = '/etc/php/8.3/fpm/pool.d/' . $username . '.conf';
+                //apache2 config dosyasına kullanıcı ekleme
+                $apache2ConfigContent = file_get_contents(base_path('server/apache/apache.conf'));
+                $apache2ConfigContent = str_replace('TRPANEL_USER', $username, $apache2ConfigContent);
+                $DOMAIN_NAME = $_SERVER['HTTP_HOST'];
+                $apache2ConfigContent = str_replace('DOMAIN_NAME', $DOMAIN_NAME, $apache2ConfigContent);
+                $apache2ConfigFile = '/etc/apache2/sites-available/' . $username . '.conf';
+
                 /**
                  *  Önce kullanıcıyı oluştur
                  */
@@ -114,6 +121,24 @@ new #[Layout('layouts.guest')] class extends Component {
                     die('php-fpm restart edilemedi: ' . implode("\n", $output));
                 }
                 $this->addSuccess('phpFpmConfigFile', '✔ php-fpm config file created');
+                /**
+                 *  apache2 config dosyasına kullanıcı ekle
+                 */
+                file_put_contents($apache2ConfigFile, $apache2ConfigContent);
+                exec('sudo systemctl reload php8.3-fpm', $output, $returnVar);
+                if ($returnVar !== 0) {
+                    throw new Exception('Failed to reload PHP-FPM: ' . implode("\n", $output));
+                }
+                exec('sudo a2ensite ' . $username . '.conf', $output, $returnVar);
+                if ($returnVar !== 0) {
+                    die('apache2 site enable edilemedi: ' . implode("\n", $output));
+                }
+                // Apache'yi yeniden başlat
+                exec('sudo systemctl reload apache2', $output, $returnVar);
+                if ($returnVar !== 0) {
+                    throw new Exception('Failed to reload Apache: ' . implode("\n", $output));
+                }
+                $this->addSuccess('apache2ConfigFile', '✔ apache2 config file created');
             }
         } catch (Exception $e) {
             $this->addError('folder', 'Folder could not be created ' . $e->getMessage() . ' ' . $e->getLine() . ' ' . $e->getFile() . ' ' . $userFolder);
