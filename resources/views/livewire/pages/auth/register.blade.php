@@ -33,6 +33,22 @@ new #[Layout('layouts.guest')] class extends Component {
             $userFolder = env('LINUX_HOME') . $validated['folder'];
             if (strtoupper(substr(PHP_OS, 0, 3)) === 'WIN') {
                 $userFolder = env('WINDOWS_HOME') . $validated['folder'];
+            } else {
+                //linux
+                $username = $validated['folder'];
+                $password = $validated['password'];
+                $createUserCommand = "sudo adduser --disabled-password --gecos '' $username";
+                $setPasswordCommand = "echo '$username:$password' | sudo chpasswd";
+                exec($createUserCommand, $output, $returnVar);
+                if ($returnVar !== 0) {
+                    die('Kullanıcı oluşturulamadı: ' . implode("\n", $output));
+                }
+
+                // Şifre ayarlama komutunu çalıştır
+                exec($setPasswordCommand, $output, $returnVar);
+                if ($returnVar !== 0) {
+                    die('Şifre ayarlanamadı: ' . implode("\n", $output));
+                }
             }
             if (!file_exists($userFolder)) {
                 $oldUmask = umask(0); // Geçici olarak dosya izinlerini değiştir
