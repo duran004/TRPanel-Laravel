@@ -33,6 +33,14 @@ new #[Layout('layouts.guest')] class extends Component {
             $userFolder = env('LINUX_HOME') . $validated['folder'];
             if (strtoupper(substr(PHP_OS, 0, 3)) === 'WIN') {
                 $userFolder = env('WINDOWS_HOME') . $validated['folder'];
+                if (!file_exists($userFolder)) {
+                    $oldUmask = umask(0); // Geçici olarak dosya izinlerini değiştir
+                    mkdir($userFolder, 0777, true);
+                    umask($oldUmask); // Eski dosya izinlerini geri yükle
+                } else {
+                    $this->addError('folder', 'Folder already exists');
+                    return;
+                }
             } else {
                 //linux
                 $username = $validated['folder'];
@@ -44,19 +52,10 @@ new #[Layout('layouts.guest')] class extends Component {
                     die('Kullanıcı oluşturulamadı: ' . implode("\n", $output));
                 }
 
-                // Şifre ayarlama komutunu çalıştır
                 exec($setPasswordCommand, $output, $returnVar);
                 if ($returnVar !== 0) {
                     die('Şifre ayarlanamadı: ' . implode("\n", $output));
                 }
-            }
-            if (!file_exists($userFolder)) {
-                $oldUmask = umask(0); // Geçici olarak dosya izinlerini değiştir
-                mkdir($userFolder, 0777, true);
-                umask($oldUmask); // Eski dosya izinlerini geri yükle
-            } else {
-                $this->addError('folder', 'Folder already exists');
-                return;
             }
         } catch (Exception $e) {
             $this->addError('folder', 'Folder could not be created ' . $e->getMessage() . ' ' . $e->getLine() . ' ' . $e->getFile() . ' ' . $userFolder);
