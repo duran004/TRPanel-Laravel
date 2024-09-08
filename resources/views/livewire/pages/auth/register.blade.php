@@ -62,7 +62,7 @@ new #[Layout('layouts.guest')] class extends Component {
                 // Kullanıcıya ev dizinini ayarlama
                 $chmd = "sudo chmod 750 /home/$username";
                 //php-fpm config dosyasına kullanıcı ekleme
-                $phpFpmConfigContent = file_get_contents(base_path('server/php-fpm.conf'));
+                $phpFpmConfigContent = file_get_contents(base_path('server/php/php-fpm.conf'));
                 $phpFpmConfigContent = str_replace('TRPANEL_USER', $username, $phpFpmConfigContent);
                 $phpFpmConfigFile = '/etc/php/8.3/fpm/pool.d/' . $username . '.conf';
                 /**
