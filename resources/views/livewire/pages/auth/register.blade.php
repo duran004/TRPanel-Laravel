@@ -14,7 +14,16 @@ new #[Layout('layouts.guest')] class extends Component {
     public string $password = '';
     public string $password_confirmation = '';
     public string $folder = '';
+    public array $successes = [];
 
+    public function addSuccess(string $key, string $message): void
+    {
+        $this->successes[$key] = $message;
+    }
+    public function getSuccessMessages(): array
+    {
+        return $this->successMessages;
+    }
     /**
      * Handle an incoming registration request.
      */
@@ -26,7 +35,6 @@ new #[Layout('layouts.guest')] class extends Component {
             'email' => ['required', 'string', 'lowercase', 'email', 'max:255', 'unique:' . User::class],
             'password' => ['required', 'string', 'confirmed', Rules\Password::defaults()],
         ]);
-
         $validated['password'] = Hash::make($validated['password']);
         // eğer linux ise home altına windows ise C:/temp/ altına klasör oluştur
         try {
@@ -47,15 +55,40 @@ new #[Layout('layouts.guest')] class extends Component {
                 $password = $validated['password'];
                 $createUserCommand = "sudo adduser --disabled-password --gecos '' $username";
                 $setPasswordCommand = "echo '$username:$password' | sudo chpasswd";
+                // Kullanıcıyı kendi grubuna alma ve ev dizinini ayarlama komutu
+                $setHomeDirectoryCommand = "sudo usermod -d /home/$username -m $username";
+                // Kullanıcıya geçiş yapma komutu
+                $loginUserCommand = "sudo su - $username";
+                // Kullanıcıya ev dizinini ayarlama
+                $chmd = "sudo chmod 750 /home/$username";
                 exec($createUserCommand, $output, $returnVar);
                 if ($returnVar !== 0) {
                     die('Kullanıcı oluşturulamadı: ' . implode("\n", $output));
                 }
+                $this->addSuccess('createUserCommand', '✔ User created');
 
                 exec($setPasswordCommand, $output, $returnVar);
                 if ($returnVar !== 0) {
                     die('Şifre ayarlanamadı: ' . implode("\n", $output));
                 }
+                $this->addSuccess('setPasswordCommand', '✔ Password set');
+
+                exec($setHomeDirectoryCommand, $output, $returnVar);
+                if ($returnVar !== 0) {
+                    die('Ev dizini ayarlanamadı: ' . implode("\n", $output));
+                }
+                $this->addSuccess('setHomeDirectoryCommand', '✔ Home directory set');
+                exec($loginUserCommand, $output, $returnVar);
+                if ($returnVar !== 0) {
+                    die('Kullanıcıya geçiş yapılamadı: ' . implode("\n", $output));
+                }
+                $this->addSuccess('loginUserCommand', '✔ User logged in');
+
+                exec($chmd, $output, $returnVar);
+                if ($returnVar !== 0) {
+                    die('Kullanıcıya geçiş yapılamadı: ' . implode("\n", $output));
+                }
+                $this->addSuccess('chmd', "✔ chmod 750 /home/$username");
             }
         } catch (Exception $e) {
             $this->addError('folder', 'Folder could not be created ' . $e->getMessage() . ' ' . $e->getLine() . ' ' . $e->getFile() . ' ' . $userFolder);
@@ -87,6 +120,8 @@ new #[Layout('layouts.guest')] class extends Component {
             <x-text-input wire:model="folder" id="folder" class="block mt-1 w-full" type="text" name="folder"
                 required autocomplete="folder" pattern="^[a-zA-Z0-9_]*$" />
             <x-input-error :messages="$errors->get('folder')" class="mt-2" />
+            <x-input-success :messages="$successes" class="mt-2" />
+
         </div>
 
         <!-- Email Address -->
