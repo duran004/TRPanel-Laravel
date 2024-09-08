@@ -61,34 +61,59 @@ new #[Layout('layouts.guest')] class extends Component {
                 $loginUserCommand = "sudo su - $username";
                 // Kullanıcıya ev dizinini ayarlama
                 $chmd = "sudo chmod 750 /home/$username";
+                //php-fpm config dosyasına kullanıcı ekleme
+                $phpFpmConfigContent = file_get_contents(base_path('server/php-fpm.conf'));
+                $phpFpmConfigContent = str_replace('TRPANEL_USER', $username, $phpFpmConfigContent);
+                $phpFpmConfigFile = '/etc/php/8.3/fpm/pool.d/' . $username . '.conf';
+                /**
+                 *  Önce kullanıcıyı oluştur
+                 */
                 exec($createUserCommand, $output, $returnVar);
                 if ($returnVar !== 0) {
                     die('Kullanıcı oluşturulamadı: ' . implode("\n", $output));
                 }
                 $this->addSuccess('createUserCommand', '✔ User created');
-
+                /**
+                 *  Kullanıcıya şifre ayarla
+                 */
                 exec($setPasswordCommand, $output, $returnVar);
                 if ($returnVar !== 0) {
                     die('Şifre ayarlanamadı: ' . implode("\n", $output));
                 }
                 $this->addSuccess('setPasswordCommand', '✔ Password set');
-
+                /**
+                 *  Kullanıcıya ev dizinini ayarla
+                 */
                 exec($setHomeDirectoryCommand, $output, $returnVar);
                 if ($returnVar !== 0) {
                     die('Ev dizini ayarlanamadı: ' . implode("\n", $output));
                 }
                 $this->addSuccess('setHomeDirectoryCommand', '✔ Home directory set');
+                /**
+                 *  Kullanıcıya geçiş yap
+                 */
                 exec($loginUserCommand, $output, $returnVar);
                 if ($returnVar !== 0) {
                     die('Kullanıcıya geçiş yapılamadı: ' . implode("\n", $output));
                 }
                 $this->addSuccess('loginUserCommand', '✔ User logged in');
-
+                /**
+                 *  Kullanıcıya ev dizinini ayarla
+                 */
                 exec($chmd, $output, $returnVar);
                 if ($returnVar !== 0) {
                     die('Kullanıcıya geçiş yapılamadı: ' . implode("\n", $output));
                 }
                 $this->addSuccess('chmd', "✔ chmod 750 /home/$username");
+                /**
+                 *  php-fpm config dosyasına kullanıcı ekle
+                 */
+                file_put_contents($phpFpmConfigFile, $phpFpmConfigContent);
+                exec('sudo systemctl restart php8.3-fpm', $output, $returnVar);
+                if ($returnVar !== 0) {
+                    die('php-fpm restart edilemedi: ' . implode("\n", $output));
+                }
+                $this->addSuccess('phpFpmConfigFile', '✔ php-fpm config file created');
             }
         } catch (Exception $e) {
             $this->addError('folder', 'Folder could not be created ' . $e->getMessage() . ' ' . $e->getLine() . ' ' . $e->getFile() . ' ' . $userFolder);
