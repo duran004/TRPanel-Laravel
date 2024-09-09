@@ -24,7 +24,11 @@ new #[Layout('layouts.guest')] class extends Component {
     {
         return $this->successMessages;
     }
-
+    public function rollBackExec(string $message): void
+    {
+        Log::info($message);
+        throw new Exception($message);
+    }
     public function createUser(string $username, string $password)
     {
         $createUserCommand = "sudo adduser --disabled-password --gecos '' $username";
@@ -41,7 +45,7 @@ new #[Layout('layouts.guest')] class extends Component {
          */
         exec($createUserCommand, $output, $returnVar);
         if ($returnVar !== 0) {
-            die('Kullanıcı oluşturulamadı: ' . implode("\n", $output));
+            $this->rollBackExec('Kullanıcı oluşturulamadı');
         }
         $this->addSuccess('createUserCommand', '✔ User created');
         /**
@@ -49,7 +53,7 @@ new #[Layout('layouts.guest')] class extends Component {
          */
         exec($setPasswordCommand, $output, $returnVar);
         if ($returnVar !== 0) {
-            die('Şifre ayarlanamadı: ' . implode("\n", $output));
+            $this->rollBackExec('Şifre ayarlanamadı ');
         }
         $this->addSuccess('setPasswordCommand', '✔ Password set');
         /**
@@ -57,7 +61,7 @@ new #[Layout('layouts.guest')] class extends Component {
          */
         exec($setHomeDirectoryCommand, $output, $returnVar);
         if ($returnVar !== 0) {
-            die('Ev dizini ayarlanamadı: ' . implode("\n", $output));
+            $this->rollBackExec('Ev dizini ayarlanamadı ');
         }
         $this->addSuccess('setHomeDirectoryCommand', '✔ Home directory set');
         /**
@@ -65,7 +69,7 @@ new #[Layout('layouts.guest')] class extends Component {
          */
         exec($loginUserCommand, $output, $returnVar);
         if ($returnVar !== 0) {
-            die('Kullanıcıya geçiş yapılamadı: ' . implode("\n", $output));
+            $this->rollBackExec('Kullanıcıya geçiş yapılamadı');
         }
         $this->addSuccess('loginUserCommand', '✔ User logged in');
         /**
@@ -73,7 +77,7 @@ new #[Layout('layouts.guest')] class extends Component {
          */
         exec($chmd, $output, $returnVar);
         if ($returnVar !== 0) {
-            die('Kullanıcıya geçiş yapılamadı: ' . implode("\n", $output));
+            $this->rollBackExec('Ev dizini izinleri ayarlanamadı');
         }
         $this->addSuccess('chmd', "✔ chmod 750 /home/$username");
     }
@@ -86,7 +90,7 @@ new #[Layout('layouts.guest')] class extends Component {
         // Apache'nin erişimi için izinleri ayarlayın
         exec("sudo chmod 750 $homeDir", $output, $returnVar);
         if ($returnVar !== 0) {
-            die('Ev dizini izinleri ayarlanamadı: ' . implode("\n", $output));
+            $this->rollBackExec('home dizini izinleri ayarlanamadı');
         }
         $this->addSuccess('chmod_home', "✔ chmod 750 $homeDir");
 
@@ -98,14 +102,14 @@ new #[Layout('layouts.guest')] class extends Component {
 
         exec("sudo chown $username:www-data $publicHtmlDir", $output, $returnVar);
         if ($returnVar !== 0) {
-            die('public_html dizini sahiplik ayarlanamadı: ' . implode("\n", $output));
+            $this->rollBackExec('public_html dizini chown edilemedi');
         }
         $this->addSuccess('chown_public_html', "✔ chown $username:www-data $publicHtmlDir");
 
         // public_html dizinine Apache'nin erişimi için izinleri ayarlayın
         exec("sudo chmod 750 $publicHtmlDir", $output, $returnVar);
         if ($returnVar !== 0) {
-            die('public_html dizini izinleri ayarlanamadı: ' . implode("\n", $output));
+            $this->rollBackExec('public_html dizini izinleri ayarlanamadı');
         }
         $this->addSuccess('chmod_public_html', "✔ chmod 750 $publicHtmlDir");
     }
@@ -113,13 +117,13 @@ new #[Layout('layouts.guest')] class extends Component {
     {
         exec('sudo systemctl reload php8.3-fpm', $output, $returnVar);
         if ($returnVar !== 0) {
-            throw new Exception('Failed to reload PHP-FPM: ' . implode("\n", $output));
+            $this->rollBackExec('Failed to reload PHP-FPM: ' . implode("\n", $output));
         }
 
         // Apache'yi yeniden başlat
         exec('sudo systemctl reload apache2', $output, $returnVar);
         if ($returnVar !== 0) {
-            throw new Exception('Failed to reload Apache: ' . implode("\n", $output));
+            $this->rollBackExec('Failed to reload Apache: ' . implode("\n", $output));
         }
     }
     public function addPhpFpm(string $username)
@@ -140,7 +144,7 @@ new #[Layout('layouts.guest')] class extends Component {
         file_put_contents($phpFpmConfigFile, $phpFpmConfigContent);
         exec('sudo systemctl restart php8.3-fpm', $output, $returnVar);
         if ($returnVar !== 0) {
-            die('php-fpm restart edilemedi: ' . implode("\n", $output));
+            $this->rollBackExec('php-fpm yeniden başlatılamadı: ' . implode("\n", $output));
         }
         $this->addSuccess('phpFpmConfigFile', '✔ php-fpm config file created');
         /**
@@ -149,7 +153,7 @@ new #[Layout('layouts.guest')] class extends Component {
         file_put_contents($apache2ConfigFile, $apache2ConfigContent);
         exec('sudo a2ensite ' . $username . '.conf', $output, $returnVar);
         if ($returnVar !== 0) {
-            die('apache2 site enable edilemedi: ' . implode("\n", $output));
+            $this->rollBackExec('apache2 config dosyası oluşturulamadı: ' . implode("\n", $output));
         }
     }
     /**
