@@ -24,6 +24,134 @@ new #[Layout('layouts.guest')] class extends Component {
     {
         return $this->successMessages;
     }
+
+    public function createUser(string $username, string $password)
+    {
+        $createUserCommand = "sudo adduser --disabled-password --gecos '' $username";
+        $setPasswordCommand = "echo '$username:$password' | sudo chpasswd";
+        // Kullanıcıyı kendi grubuna alma ve ev dizinini ayarlama komutu
+        $setHomeDirectoryCommand = "sudo usermod -d /home/$username -m $username";
+        // Kullanıcıya geçiş yapma komutu
+        $loginUserCommand = "sudo su - $username";
+        // Kullanıcıya ev dizinini ayarlama
+        $chmd = "sudo chmod 750 /home/$username";
+
+        /**
+         *  Önce kullanıcıyı oluştur
+         */
+        exec($createUserCommand, $output, $returnVar);
+        if ($returnVar !== 0) {
+            die('Kullanıcı oluşturulamadı: ' . implode("\n", $output));
+        }
+        $this->addSuccess('createUserCommand', '✔ User created');
+        /**
+         *  Kullanıcıya şifre ayarla
+         */
+        exec($setPasswordCommand, $output, $returnVar);
+        if ($returnVar !== 0) {
+            die('Şifre ayarlanamadı: ' . implode("\n", $output));
+        }
+        $this->addSuccess('setPasswordCommand', '✔ Password set');
+        /**
+         *  Kullanıcıya ev dizinini ayarla
+         */
+        exec($setHomeDirectoryCommand, $output, $returnVar);
+        if ($returnVar !== 0) {
+            die('Ev dizini ayarlanamadı: ' . implode("\n", $output));
+        }
+        $this->addSuccess('setHomeDirectoryCommand', '✔ Home directory set');
+        /**
+         *  Kullanıcıya geçiş yap
+         */
+        exec($loginUserCommand, $output, $returnVar);
+        if ($returnVar !== 0) {
+            die('Kullanıcıya geçiş yapılamadı: ' . implode("\n", $output));
+        }
+        $this->addSuccess('loginUserCommand', '✔ User logged in');
+        /**
+         *  Kullanıcıya ev dizinini ayarla
+         */
+        exec($chmd, $output, $returnVar);
+        if ($returnVar !== 0) {
+            die('Kullanıcıya geçiş yapılamadı: ' . implode("\n", $output));
+        }
+        $this->addSuccess('chmd', "✔ chmod 750 /home/$username");
+    }
+
+    public function addPermission(string $username)
+    {
+        $publicHtmlDir = "/home/$username/public_html";
+        $homeDir = "/home/$username";
+
+        // Apache'nin erişimi için izinleri ayarlayın
+        exec("sudo chmod 750 $homeDir", $output, $returnVar);
+        if ($returnVar !== 0) {
+            die('Ev dizini izinleri ayarlanamadı: ' . implode("\n", $output));
+        }
+        $this->addSuccess('chmod_home', "✔ chmod 750 $homeDir");
+
+        // public_html dizini oluşturma ve izin ayarlama
+        if (!is_dir($publicHtmlDir)) {
+            mkdir($publicHtmlDir, 0750, true);
+            file_put_contents("$publicHtmlDir/index.php", "<?php\n phpinfo();");
+        }
+
+        exec("sudo chown $username:www-data $publicHtmlDir", $output, $returnVar);
+        if ($returnVar !== 0) {
+            die('public_html dizini sahiplik ayarlanamadı: ' . implode("\n", $output));
+        }
+        $this->addSuccess('chown_public_html', "✔ chown $username:www-data $publicHtmlDir");
+
+        // public_html dizinine Apache'nin erişimi için izinleri ayarlayın
+        exec("sudo chmod 750 $publicHtmlDir", $output, $returnVar);
+        if ($returnVar !== 0) {
+            die('public_html dizini izinleri ayarlanamadı: ' . implode("\n", $output));
+        }
+        $this->addSuccess('chmod_public_html', "✔ chmod 750 $publicHtmlDir");
+    }
+    public function reloadSystem()
+    {
+        exec('sudo systemctl reload php8.3-fpm', $output, $returnVar);
+        if ($returnVar !== 0) {
+            throw new Exception('Failed to reload PHP-FPM: ' . implode("\n", $output));
+        }
+
+        // Apache'yi yeniden başlat
+        exec('sudo systemctl reload apache2', $output, $returnVar);
+        if ($returnVar !== 0) {
+            throw new Exception('Failed to reload Apache: ' . implode("\n", $output));
+        }
+    }
+    public function addPhpFpm()
+    {
+        //php-fpm config dosyasına kullanıcı ekleme
+        $phpFpmConfigContent = file_get_contents(base_path('server/php/php-fpm.conf'));
+        $phpFpmConfigContent = str_replace('TRPANEL_USER', $username, $phpFpmConfigContent);
+        $phpFpmConfigFile = '/etc/php/8.3/fpm/pool.d/' . $username . '.conf';
+        //apache2 config dosyasına kullanıcı ekleme
+        $apache2ConfigContent = file_get_contents(base_path('server/apache/apache.conf'));
+        $apache2ConfigContent = str_replace('TRPANEL_USER', $username, $apache2ConfigContent);
+        $DOMAIN_NAME = $_SERVER['HTTP_HOST'];
+        $apache2ConfigContent = str_replace('DOMAIN_NAME', $DOMAIN_NAME, $apache2ConfigContent);
+        $apache2ConfigFile = '/etc/apache2/sites-available/' . $username . '.conf';
+        /**
+         *  php-fpm config dosyasına kullanıcı ekle
+         */
+        file_put_contents($phpFpmConfigFile, $phpFpmConfigContent);
+        exec('sudo systemctl restart php8.3-fpm', $output, $returnVar);
+        if ($returnVar !== 0) {
+            die('php-fpm restart edilemedi: ' . implode("\n", $output));
+        }
+        $this->addSuccess('phpFpmConfigFile', '✔ php-fpm config file created');
+        /**
+         *  apache2 config dosyasına kullanıcı ekle
+         */
+        file_put_contents($apache2ConfigFile, $apache2ConfigContent);
+        exec('sudo a2ensite ' . $username . '.conf', $output, $returnVar);
+        if ($returnVar !== 0) {
+            die('apache2 site enable edilemedi: ' . implode("\n", $output));
+        }
+    }
     /**
      * Handle an incoming registration request.
      */
@@ -53,92 +181,11 @@ new #[Layout('layouts.guest')] class extends Component {
                 //linux
                 $username = $validated['folder'];
                 $password = $validated['password'];
-                $createUserCommand = "sudo adduser --disabled-password --gecos '' $username";
-                $setPasswordCommand = "echo '$username:$password' | sudo chpasswd";
-                // Kullanıcıyı kendi grubuna alma ve ev dizinini ayarlama komutu
-                $setHomeDirectoryCommand = "sudo usermod -d /home/$username -m $username";
-                // Kullanıcıya geçiş yapma komutu
-                $loginUserCommand = "sudo su - $username";
-                // Kullanıcıya ev dizinini ayarlama
-                $chmd = "sudo chmod 750 /home/$username";
-                //php-fpm config dosyasına kullanıcı ekleme
-                $phpFpmConfigContent = file_get_contents(base_path('server/php/php-fpm.conf'));
-                $phpFpmConfigContent = str_replace('TRPANEL_USER', $username, $phpFpmConfigContent);
-                $phpFpmConfigFile = '/etc/php/8.3/fpm/pool.d/' . $username . '.conf';
-                //apache2 config dosyasına kullanıcı ekleme
-                $apache2ConfigContent = file_get_contents(base_path('server/apache/apache.conf'));
-                $apache2ConfigContent = str_replace('TRPANEL_USER', $username, $apache2ConfigContent);
-                $DOMAIN_NAME = $_SERVER['HTTP_HOST'];
-                $apache2ConfigContent = str_replace('DOMAIN_NAME', $DOMAIN_NAME, $apache2ConfigContent);
-                $apache2ConfigFile = '/etc/apache2/sites-available/' . $username . '.conf';
+                $this->createUser($username, $password);
+                $this->addPhpFpm();
 
-                /**
-                 *  Önce kullanıcıyı oluştur
-                 */
-                exec($createUserCommand, $output, $returnVar);
-                if ($returnVar !== 0) {
-                    die('Kullanıcı oluşturulamadı: ' . implode("\n", $output));
-                }
-                $this->addSuccess('createUserCommand', '✔ User created');
-                /**
-                 *  Kullanıcıya şifre ayarla
-                 */
-                exec($setPasswordCommand, $output, $returnVar);
-                if ($returnVar !== 0) {
-                    die('Şifre ayarlanamadı: ' . implode("\n", $output));
-                }
-                $this->addSuccess('setPasswordCommand', '✔ Password set');
-                /**
-                 *  Kullanıcıya ev dizinini ayarla
-                 */
-                exec($setHomeDirectoryCommand, $output, $returnVar);
-                if ($returnVar !== 0) {
-                    die('Ev dizini ayarlanamadı: ' . implode("\n", $output));
-                }
-                $this->addSuccess('setHomeDirectoryCommand', '✔ Home directory set');
-                /**
-                 *  Kullanıcıya geçiş yap
-                 */
-                exec($loginUserCommand, $output, $returnVar);
-                if ($returnVar !== 0) {
-                    die('Kullanıcıya geçiş yapılamadı: ' . implode("\n", $output));
-                }
-                $this->addSuccess('loginUserCommand', '✔ User logged in');
-                /**
-                 *  Kullanıcıya ev dizinini ayarla
-                 */
-                exec($chmd, $output, $returnVar);
-                if ($returnVar !== 0) {
-                    die('Kullanıcıya geçiş yapılamadı: ' . implode("\n", $output));
-                }
-                $this->addSuccess('chmd', "✔ chmod 750 /home/$username");
-                /**
-                 *  php-fpm config dosyasına kullanıcı ekle
-                 */
-                file_put_contents($phpFpmConfigFile, $phpFpmConfigContent);
-                exec('sudo systemctl restart php8.3-fpm', $output, $returnVar);
-                if ($returnVar !== 0) {
-                    die('php-fpm restart edilemedi: ' . implode("\n", $output));
-                }
-                $this->addSuccess('phpFpmConfigFile', '✔ php-fpm config file created');
-                /**
-                 *  apache2 config dosyasına kullanıcı ekle
-                 */
-                file_put_contents($apache2ConfigFile, $apache2ConfigContent);
-                exec('sudo systemctl reload php8.3-fpm', $output, $returnVar);
-                if ($returnVar !== 0) {
-                    throw new Exception('Failed to reload PHP-FPM: ' . implode("\n", $output));
-                }
-                exec('sudo a2ensite ' . $username . '.conf', $output, $returnVar);
-                if ($returnVar !== 0) {
-                    die('apache2 site enable edilemedi: ' . implode("\n", $output));
-                }
-
-                // Apache'yi yeniden başlat
-                exec('sudo systemctl reload apache2', $output, $returnVar);
-                if ($returnVar !== 0) {
-                    throw new Exception('Failed to reload Apache: ' . implode("\n", $output));
-                }
+                $this->addPermission($username);
+                $this->reloadSystem();
                 $this->addSuccess('apache2ConfigFile', '✔ apache2 config file created');
             }
         } catch (Exception $e) {
