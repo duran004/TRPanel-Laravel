@@ -133,6 +133,12 @@ new #[Layout('layouts.guest')] class extends Component {
             $this->rollBackExec('home dizini izinleri ayarlanamadı');
         }
         $this->addSuccess('chmod_home', '✔ chmod +x /home');
+
+        // Kullanıcıyı www-data grubuna ekle
+        exec(" sudo usermod -a -G $username www-data", $output, $returnVar);
+        if ($returnVar !== 0) {
+            $this->rollBackExec('Failed to add user to www-data group: ' . implode("\n", $output));
+        }
     }
     public function reloadSystem()
     {
