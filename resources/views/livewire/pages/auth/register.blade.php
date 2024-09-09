@@ -27,23 +27,17 @@ new #[Layout('layouts.guest')] class extends Component {
     public function rollBackExec(string $message): void
     {
         Log::info($message);
+        /**
+         *  @todo: Hata durumunda işlemleri geri al
+         */
         throw new Exception($message);
     }
     public function createUser(string $username, string $password)
     {
-        $createUserCommand = "sudo adduser --disabled-password --gecos '' $username";
-        $setPasswordCommand = "echo '$username:$password' | sudo chpasswd";
-        // Kullanıcıyı kendi grubuna alma ve ev dizinini ayarlama komutu
-        $setHomeDirectoryCommand = "sudo usermod -d /home/$username -m $username";
-        // Kullanıcıya geçiş yapma komutu
-        $loginUserCommand = "sudo su - $username";
-        // Kullanıcıya ev dizinini ayarlama
-        $chmd = "sudo chmod 750 /home/$username";
-
         /**
          *  Önce kullanıcıyı oluştur
          */
-        exec($createUserCommand, $output, $returnVar);
+        exec("sudo adduser --disabled-password --gecos '' $username", $output, $returnVar);
         if ($returnVar !== 0) {
             $this->rollBackExec('Kullanıcı oluşturulamadı');
         }
@@ -51,7 +45,7 @@ new #[Layout('layouts.guest')] class extends Component {
         /**
          *  Kullanıcıya şifre ayarla
          */
-        exec($setPasswordCommand, $output, $returnVar);
+        exec("echo '$username:$password' | sudo chpasswd", $output, $returnVar);
         if ($returnVar !== 0) {
             $this->rollBackExec('Şifre ayarlanamadı ');
         }
@@ -59,7 +53,7 @@ new #[Layout('layouts.guest')] class extends Component {
         /**
          *  Kullanıcıya ev dizinini ayarla
          */
-        exec($setHomeDirectoryCommand, $output, $returnVar);
+        exec("sudo usermod -d /home/$username -m $username", $output, $returnVar);
         if ($returnVar !== 0) {
             $this->rollBackExec('Ev dizini ayarlanamadı ');
         }
@@ -67,7 +61,7 @@ new #[Layout('layouts.guest')] class extends Component {
         /**
          *  Kullanıcıya geçiş yap
          */
-        exec($loginUserCommand, $output, $returnVar);
+        exec("sudo su - $username", $output, $returnVar);
         if ($returnVar !== 0) {
             $this->rollBackExec('Kullanıcıya geçiş yapılamadı');
         }
@@ -75,7 +69,7 @@ new #[Layout('layouts.guest')] class extends Component {
         /**
          *  Kullanıcıya ev dizinini ayarla
          */
-        exec($chmd, $output, $returnVar);
+        exec("sudo chmod 750 /home/$username", $output, $returnVar);
         if ($returnVar !== 0) {
             $this->rollBackExec('Ev dizini izinleri ayarlanamadı');
         }
@@ -135,7 +129,7 @@ new #[Layout('layouts.guest')] class extends Component {
         //apache2 config dosyasına kullanıcı ekleme
         $apache2ConfigContent = file_get_contents(base_path('server/apache/apache.conf'));
         $apache2ConfigContent = str_replace('TRPANEL_USER', $username, $apache2ConfigContent);
-        $DOMAIN_NAME = $_SERVER['HTTP_HOST'];
+        $DOMAIN_NAME = 'localhost'; //$_SERVER['HTTP_HOST'];
         $apache2ConfigContent = str_replace('DOMAIN_NAME', $DOMAIN_NAME, $apache2ConfigContent);
         $apache2ConfigFile = '/etc/apache2/sites-available/' . $username . '.conf';
         /**
@@ -193,8 +187,7 @@ new #[Layout('layouts.guest')] class extends Component {
                 $this->addSuccess('apache2ConfigFile', '✔ apache2 config file created');
             }
         } catch (Exception $e) {
-            $this->addError('folder', 'Folder could not be created ' . $e->getMessage() . ' ' . $e->getLine() . ' ' . $e->getFile() . ' ' . $userFolder);
-            return;
+            throw new Exception($e->getMessage());
         }
 
         event(new Registered(($user = User::create($validated))));
