@@ -198,8 +198,9 @@
 
                     break;
                 case 'Extract':
-                    const extractPath = filePath.split('//').slice(0, -1).join('//');
+                    const extractPath = filePath.split('/').slice(0, -1).join('/');
                     console.warn(filePath);
+                    console.warn(extractPath);
                     $.alert({
                         title: '{{ __('Extract Path') }}',
                         content: `{{ __('It can override existing files. Are you sure to extract?') }}<br><br>

@@ -18,7 +18,29 @@ class FolderController extends Controller
         $this->basePath = $this->normalizePath($this->basePath) . "/";
         //current path base pathin yukarısına çıkamaz
     }
+    public function checkPath($currentPath)
+    {
+        // Laravel uygulamasının temel yolunu al
+        $basePath = $this->basePath;
 
+        // Gerçek yolları al
+        $realCurrentPath = realpath($currentPath);
+        $realBasePath = realpath($basePath);
+
+
+        // Eğer yollar geçerli değilse hata döndür
+        if ($realCurrentPath === false || $realBasePath === false) {
+            return false;
+        }
+
+        // Geçerli yolun temel yolun üstüne çıkıp çıkmadığını kontrol et
+        if (strpos($realCurrentPath, $realBasePath) !== 0) {
+            return false;
+            return (redirect()->route('filemanager.index', ['path' => ''])->send());
+        }
+
+        return true;
+    }
     /**
      * Display a listing of the resource.
      */
@@ -35,6 +57,7 @@ class FolderController extends Controller
         $data = [
             'path' => $_GET['path'] ?? ''
         ];
+
         return response()->json([
             'status' => true,
             'message' => view('dashboard.folder.create', $data)->render()
@@ -56,6 +79,13 @@ class FolderController extends Controller
                 $path = $this->basePath;
             } else {
                 $path = $path . "/";
+                if (!$this->checkPath($path)) {
+                    return response()->json([
+                        'status' => false,
+                        'message' => __('Invalid path'),
+                        'path' => $path
+                    ], 400);
+                }
             }
             $path = $this->normalizePath($path . $folder);
 

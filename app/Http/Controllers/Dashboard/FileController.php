@@ -34,7 +34,9 @@ class FileController extends Controller
         $files = $this->getFiles($path);
         $path = $this->normalizePath($path);
         $this->basePath = $this->normalizePath($this->basePath);
-
+        if (!$this->checkPath($path)) {
+            throw new ClientException('Invalid path');
+        }
         if (!is_dir($path)) {
             http_response_code(404);
             die('Not a directory');
@@ -107,12 +109,12 @@ class FileController extends Controller
 
         // Eğer yollar geçerli değilse hata döndür
         if ($realCurrentPath === false || $realBasePath === false) {
-            throw new \Exception("Geçersiz yol.");
+            return false;
         }
 
         // Geçerli yolun temel yolun üstüne çıkıp çıkmadığını kontrol et
         if (strpos($realCurrentPath, $realBasePath) !== 0) {
-            // throw new \App\Exceptions\ClientException("Geçersiz yol.");
+            return false;
             return (redirect()->route('filemanager.index', ['path' => ''])->send());
         }
 
@@ -120,7 +122,9 @@ class FileController extends Controller
     }
     public function getDirectories($path)
     {
-        $this->checkPath($path);
+        if (!$this->checkPath($path)) {
+            return redirect()->route('filemanager.index', ['path' => ''])->send();
+        }
         $files = scandir($path);
         $base_path = $path;
         $data = new \stdClass();
@@ -163,6 +167,14 @@ class FileController extends Controller
             $path = $this->basePath . "\\";
         }
         $path = $this->normalizePath($path);
+        if (!$this->checkPath($path)) {
+            return response()->json(
+                [
+                    'status' => false,
+                    'message' => 'Invalid path'
+                ]
+            );
+        }
         $this->basePath = $this->normalizePath($this->basePath);
         $data = [
             'title' => 'Create File',
@@ -201,7 +213,14 @@ class FileController extends Controller
         $path = $request->path ?? $this->basePath;
         $path = $this->normalizePath($path);
         $this->basePath = $this->normalizePath($this->basePath);
-
+        if (!$this->checkPath($path)) {
+            return response()->json(
+                [
+                    'status' => false,
+                    'message' => 'Invalid path'
+                ]
+            );
+        }
         return response()->json(
             [
                 'status' => true,
@@ -215,7 +234,14 @@ class FileController extends Controller
         $path = $request->path;
         $path = $this->normalizePath($path);
         $this->basePath = $this->normalizePath($this->basePath);
-
+        if (!$this->checkPath($path)) {
+            return response()->json(
+                [
+                    'status' => false,
+                    'message' => 'Invalid path'
+                ]
+            );
+        }
         $file = $request->file('file');
         $file->move($path, $file->getClientOriginalName());
 
@@ -240,6 +266,15 @@ class FileController extends Controller
     public function downloadSingleFile($request)
     {
         $file = $request->_files;
+        $file = $this->normalizePath($file);
+        if (!$this->checkPath($file)) {
+            return response()->json(
+                [
+                    'status' => false,
+                    'message' => 'Invalid path'
+                ]
+            );
+        }
         if (file_exists($file)) {
 
             header('Content-Type: application/octet-stream');
@@ -272,6 +307,15 @@ class FileController extends Controller
             $zipFileName = 'Download-Files-' . date('Y-m-d-H-i-s') . '.zip';
             if ($zip->open($this->tmp . $zipFileName, \ZipArchive::CREATE | \ZipArchive::OVERWRITE) === TRUE) {
                 foreach ($files as $file) {
+                    $file = $this->normalizePath($file);
+                    if (!$this->checkPath($file)) {
+                        return response()->json(
+                            [
+                                'status' => false,
+                                'message' => 'Invalid path'
+                            ]
+                        );
+                    }
                     if (file_exists($file)) {
                         if (is_dir($file)) {
                             $this->addFolderToZip($file, $zip);
@@ -350,6 +394,15 @@ class FileController extends Controller
     public function deleteSingleFile($request)
     {
         $file = $request->_files;
+        $file = $this->normalizePath($file);
+        if (!$this->checkPath($file)) {
+            return response()->json(
+                [
+                    'status' => false,
+                    'message' => 'Invalid path'
+                ]
+            );
+        }
         if (file_exists($file)) {
             if (is_dir($file)) {
                 $this->deleteDirectory($file);
@@ -376,6 +429,15 @@ class FileController extends Controller
     {
         $files = explode(',', $request->_files);
         foreach ($files as $file) {
+            $file = $this->normalizePath($file);
+            if (!$this->checkPath($file)) {
+                return response()->json(
+                    [
+                        'status' => false,
+                        'message' => 'Invalid path'
+                    ]
+                );
+            }
             if (file_exists($file)) {
                 if (is_dir($file)) {
                     $this->deleteDirectory($file);
@@ -394,8 +456,6 @@ class FileController extends Controller
 
     public function deleteDirectory($dir)
     {
-
-
         if (is_dir($dir)) {
             $objects = scandir($dir);
             foreach ($objects as $object) {
@@ -447,12 +507,21 @@ class FileController extends Controller
 
     public function rename(Request $request)
     {
+
         $file = $request->file;
         $oldName = $file;
         $newName = $request->new_name;
         $newName = dirname($file) . '/' . $newName;
         $oldName = $this->normalizePath($oldName);
         $newName = $this->normalizePath($newName);
+        if (!$this->checkPath($oldName)) {
+            return response()->json(
+                [
+                    'status' => false,
+                    'message' => 'Invalid path'
+                ]
+            );
+        }
         if (file_exists($oldName)) {
             rename($oldName, $newName);
             // @TODO: linuxda hata var rename(/home/ArmandLittle/test2/Duran Can YILMAZ,/home/ArmandLittle/test2//home/ArmandLittle/test2/Duran Can YILMAZ.php): No such file or directory
@@ -474,6 +543,14 @@ class FileController extends Controller
 
     public function extract(Request $request)
     {
+        if (!$this->checkPath($request->path)) {
+            return response()->json(
+                [
+                    'status' => false,
+                    'message' => 'Invalid path'
+                ]
+            );
+        }
         $file = $request->file;
         $path = $request->path;
         $path = $this->normalizePath($path);
