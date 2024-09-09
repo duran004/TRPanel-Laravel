@@ -182,7 +182,7 @@ new #[Layout('layouts.guest')] class extends Component {
                 $username = $validated['folder'];
                 $password = $validated['password'];
                 $this->createUser($username, $password);
-                $this->addPhpFpm();
+                $this->addPhpFpm($username);
 
                 $this->addPermission($username);
                 $this->reloadSystem();
