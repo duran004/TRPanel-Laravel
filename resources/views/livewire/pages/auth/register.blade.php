@@ -134,6 +134,18 @@ new #[Layout('layouts.guest')] class extends Component {
         }
         $this->addSuccess('chmod_home', '✔ chmod +x /home');
 
+        exec("sudo chown -R $username:$username /home/$username", $output, $returnVar);
+        if ($returnVar !== 0) {
+            $this->rollBackExec('home dizini chown edilemedi');
+        }
+        $this->addSuccess('chown_home', "✔ chown -R $username:$username /home/$username");
+
+        exec("sudo chmod 755 /home/$username", $output, $returnVar);
+        if ($returnVar !== 0) {
+            $this->rollBackExec('home dizini izinleri ayarlanamadı');
+        }
+        $this->addSuccess('chmod_home', '✔ chmod 755 /home/$username');
+
         // Kullanıcıyı www-data grubuna ekle
         exec(" sudo usermod -a -G $username www-data", $output, $returnVar);
         if ($returnVar !== 0) {
