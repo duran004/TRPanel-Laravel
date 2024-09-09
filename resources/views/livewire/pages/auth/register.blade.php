@@ -133,6 +133,7 @@ new #[Layout('layouts.guest')] class extends Component {
                 if ($returnVar !== 0) {
                     die('apache2 site enable edilemedi: ' . implode("\n", $output));
                 }
+
                 // Apache'yi yeniden başlat
                 exec('sudo systemctl reload apache2', $output, $returnVar);
                 if ($returnVar !== 0) {
