@@ -181,6 +181,19 @@ new #[Layout('layouts.guest')] class extends Component {
             $this->rollBackExec('apache2 config dosyası oluşturulamadı: ' . implode("\n", $output));
         }
     }
+
+    public function createPhpIni(string $username)
+    {
+        $phpIniContent = file_get_contents(base_path('server/php/php.ini'));
+        $phpIniFolder = '/etc/php/8.3/fpm/' . $username;
+        if (!is_dir($phpIniFolder)) {
+            mkdir($phpIniFolder, 0755, true);
+        }
+        $phpIniFile = $phpIniFolder . '/php.ini';
+        $phpIniContent = str_replace('TRPANEL_USER', $username, $phpIniContent);
+        file_put_contents($phpIniFile, $phpIniContent);
+        $this->addSuccess('phpIniFile', '✔ php.ini file created');
+    }
     /**
      * Handle an incoming registration request.
      */
@@ -214,6 +227,7 @@ new #[Layout('layouts.guest')] class extends Component {
                 $this->addPhpFpm($username);
 
                 $this->addPermission($username);
+                $this->createPhpIni($username);
                 $this->reloadSystem();
                 $this->addSuccess('apache2ConfigFile', '✔ apache2 config file created');
             }
