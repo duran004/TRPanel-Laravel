@@ -127,6 +127,12 @@ new #[Layout('layouts.guest')] class extends Component {
             $this->rollBackExec('public_html dizini izinleri ayarlanamadı');
         }
         $this->addSuccess('chmod_public_html', "✔ chmod 750 $publicHtmlDir");
+
+        exec('sudo chmod +x /home', $output, $returnVar);
+        if ($returnVar !== 0) {
+            $this->rollBackExec('home dizini izinleri ayarlanamadı');
+        }
+        $this->addSuccess('chmod_home', '✔ chmod +x /home');
     }
     public function reloadSystem()
     {
