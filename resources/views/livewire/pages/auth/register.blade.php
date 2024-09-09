@@ -122,7 +122,7 @@ new #[Layout('layouts.guest')] class extends Component {
             throw new Exception('Failed to reload Apache: ' . implode("\n", $output));
         }
     }
-    public function addPhpFpm()
+    public function addPhpFpm(string $username)
     {
         //php-fpm config dosyasına kullanıcı ekleme
         $phpFpmConfigContent = file_get_contents(base_path('server/php/php-fpm.conf'));
