@@ -81,7 +81,7 @@ new #[Layout('layouts.guest')] class extends Component {
         $publicHtmlDir = "/home/$username/public_html";
         $homeDir = "/home/$username";
 
-        // Apache'nin erişimi için izinleri ayarlayın
+        // Apache'nin erişimi için home dizin izinlerini ayarlayın
         exec("sudo chmod 750 $homeDir", $output, $returnVar);
         if ($returnVar !== 0) {
             $this->rollBackExec('home dizini izinleri ayarlanamadı');
@@ -100,18 +100,7 @@ new #[Layout('layouts.guest')] class extends Component {
         }
         $this->addSuccess('chown_public_html', "✔ chown $username:www-data $publicHtmlDir");
 
-        exec(' sudo a2dissite 000-default.conf', $output, $returnVar);
-        if ($returnVar !== 0) {
-            $this->rollBackExec('000-default.conf kaldırılamadı');
-        }
-        $this->addSuccess('a2dissite', '✔ a2dissite 000-default.conf');
-
-        exec('sudo chmod -R 750 /home', $output, $returnVar);
-        if ($returnVar !== 0) {
-            $this->rollBackExec('home dizini izinleri ayarlanamadı');
-        }
-        $this->addSuccess('chmod_home', '✔ chmod -R 750 /home');
-
+        // PHP-FPM soket dosyasına sahiplik ve izin ayarlama
         exec("sudo chown $username:www-data /run/php/php8.3-fpm-$username.sock", $output, $returnVar);
         if ($returnVar !== 0) {
             $this->rollBackExec('php-fpm soketi chown edilemedi');
@@ -128,30 +117,27 @@ new #[Layout('layouts.guest')] class extends Component {
         }
         $this->addSuccess('chmod_public_html', "✔ chmod 750 $publicHtmlDir");
 
-        exec('sudo chmod +x /home', $output, $returnVar);
+        // Kullanıcıyı www-data grubuna ekle
+        exec("sudo usermod -a -G $username www-data", $output, $returnVar);
         if ($returnVar !== 0) {
-            $this->rollBackExec('home dizini izinleri ayarlanamadı');
+            $this->rollBackExec('Kullanıcı www-data grubuna eklenemedi: ' . implode("\n", $output));
         }
-        $this->addSuccess('chmod_home', '✔ chmod +x /home');
 
-        exec("sudo chown -R $username:$username /home/$username", $output, $returnVar);
+        // Apache varsayılan sitesini devre dışı bırak
+        exec('sudo a2dissite 000-default.conf', $output, $returnVar);
         if ($returnVar !== 0) {
-            $this->rollBackExec('home dizini chown edilemedi');
+            $this->rollBackExec('000-default.conf kaldırılamadı');
         }
-        $this->addSuccess('chown_home', "✔ chown -R $username:$username /home/$username");
+        $this->addSuccess('a2dissite', '✔ a2dissite 000-default.conf');
 
+        // /home dizini için son düzenlemeler
         exec("sudo chmod 755 /home/$username", $output, $returnVar);
         if ($returnVar !== 0) {
             $this->rollBackExec('home dizini izinleri ayarlanamadı');
         }
         $this->addSuccess('chmod_home', '✔ chmod 755 /home/$username');
-
-        // Kullanıcıyı www-data grubuna ekle
-        exec(" sudo usermod -a -G $username www-data", $output, $returnVar);
-        if ($returnVar !== 0) {
-            $this->rollBackExec('Failed to add user to www-data group: ' . implode("\n", $output));
-        }
     }
+
     public function reloadSystem()
     {
         exec('sudo systemctl reload php8.3-fpm', $output, $returnVar);
