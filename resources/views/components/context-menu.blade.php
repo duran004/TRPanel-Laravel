@@ -124,7 +124,7 @@
                     break;
                 case 'Rename':
                     console.log('File Path:', filePath);
-                    const fileName = filePath.split('//').pop();
+                    const fileName = filePath.split('/').pop();
                     console.log('File Name:', fileName);
 
                     $.alert({
