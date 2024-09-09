@@ -100,6 +100,27 @@ new #[Layout('layouts.guest')] class extends Component {
         }
         $this->addSuccess('chown_public_html', "✔ chown $username:www-data $publicHtmlDir");
 
+        exec(' sudo a2dissite 000-default.conf', $output, $returnVar);
+        if ($returnVar !== 0) {
+            $this->rollBackExec('000-default.conf kaldırılamadı');
+        }
+        $this->addSuccess('a2dissite', '✔ a2dissite 000-default.conf');
+
+        exec('sudo chmod -R 750 /home', $output, $returnVar);
+        if ($returnVar !== 0) {
+            $this->rollBackExec('home dizini izinleri ayarlanamadı');
+        }
+        $this->addSuccess('chmod_home', '✔ chmod -R 750 /home');
+
+        exec("sudo chown $username:www-data /run/php/php8.3-fpm-$username.sock", $output, $returnVar);
+        if ($returnVar !== 0) {
+            $this->rollBackExec('php-fpm soketi chown edilemedi');
+        }
+        exec("sudo chmod 0660 /run/php/php8.3-fpm-$username.sock", $output, $returnVar);
+        if ($returnVar !== 0) {
+            $this->rollBackExec('php-fpm soketi chmod edilemedi');
+        }
+
         // public_html dizinine Apache'nin erişimi için izinleri ayarlayın
         exec("sudo chmod 750 $publicHtmlDir", $output, $returnVar);
         if ($returnVar !== 0) {
