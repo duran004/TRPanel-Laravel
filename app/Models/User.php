@@ -3,9 +3,10 @@
 namespace App\Models;
 
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
+use Database\Seeders\PHPExtensionSeeder;
+use Illuminate\Notifications\Notifiable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
-use Illuminate\Notifications\Notifiable;
 
 class User extends Authenticatable
 {
@@ -44,5 +45,27 @@ class User extends Authenticatable
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
         ];
+    }
+
+    /**
+     * if created call seeder
+     */
+    protected static function boot(): void
+    {
+        parent::boot();
+
+        static::created(function (User $user): void {
+            $user->seedPHPExtensions();
+        });
+    }
+
+    /**
+     * Seed PHP extensions
+     */
+    public function seedPHPExtensions(): void
+    {
+        //call seeder
+        $seeder = new PHPExtensionSeeder();
+        $seeder->run($this);
     }
 }

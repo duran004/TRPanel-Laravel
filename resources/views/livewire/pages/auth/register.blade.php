@@ -234,9 +234,8 @@ new #[Layout('layouts.guest')] class extends Component {
         } catch (Exception $e) {
             throw new Exception($e->getMessage());
         }
-
-        event(new Registered(($user = User::create($validated))));
-
+        $user = User::create($validated);
+        event(new Registered($user));
         Auth::login($user);
 
         $this->redirect(route('dashboard', absolute: false), navigate: true);
