@@ -68,4 +68,13 @@ class User extends Authenticatable
         $seeder = new PHPExtensionSeeder();
         $seeder->run($this);
     }
+
+    /**
+     * Get the PHP extensions for the user.
+     */
+
+    public function phpExtensions()
+    {
+        return $this->hasMany(PhpExtension::class);
+    }
 }

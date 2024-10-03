@@ -3,16 +3,27 @@
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Dashboard\FolderController;
 use App\Http\Controllers\Dashboard\FileController;
+use App\Http\Controllers\DashBoardController;
 
 
-
-Route::view('', 'dashboard')
+Route::get('/', [DashBoardController::class, 'index'])
     ->middleware(['auth', 'verified'])
     ->name('dashboard');
 
 Route::view('profile', 'profile')
     ->middleware(['auth'])
     ->name('profile');
+
+use App\Http\Controllers\PhpExtensionController;
+
+Route::middleware(['auth'])->prefix('extensions')->name('extensions.')->group(function () {
+    // PHP extension'ları listeleme
+    Route::get('/', [PhpExtensionController::class, 'index'])->name('index');
+
+    // Toplu işlemler (Aktif et, devre dışı bırak, sil)
+    Route::post('/bulk-action', [PhpExtensionController::class, 'bulkAction'])->name('bulkAction');
+});
+
 
 Route::group(['prefix' => 'filemanager', 'middleware' => ['auth', 'verified'], 'as' => 'filemanager.'], function () {
     Route::get('/', [FileController::class, 'index'])->name('index');
