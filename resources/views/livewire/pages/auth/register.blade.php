@@ -19,6 +19,8 @@ new #[Layout('layouts.guest')] class extends Component {
     public function addSuccess(string $key, string $message): void
     {
         $this->successes[$key] = $message;
+        $this->dispatch('successAdded', ['message' => $message]);
+        sleep(1);
     }
 
     public function getSuccessMessages(): array
@@ -229,6 +231,32 @@ new #[Layout('layouts.guest')] class extends Component {
 };
 ?>
 <div>
+    <div>
+        <ul id="successMessages" class="alert alert-success">
+            <!-- Başarı mesajları buraya eklenecek -->
+        </ul>
+    </div>
+    <script>
+        document.addEventListener('livewire:init', function() {
+            console.log('Livewire is ready!');
+            const successList = document.getElementById('successMessages');
+
+            Livewire.on('successAdded', function(event) {
+                console.log("Success added: " + event.message);
+                const message = event.message;
+
+                // Yeni bir <li> elemanı oluştur
+                const listItem = document.createElement('li');
+                listItem.textContent = message;
+
+                // Listeye mesajı ekle
+                successList.appendChild(listItem);
+
+                // Sayfa sonunda mesajı göster
+                window.scrollTo(0, document.body.scrollHeight);
+            });
+        });
+    </script>
     <form wire:submit="register">
         <!-- Name -->
         <div>
