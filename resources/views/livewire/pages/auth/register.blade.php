@@ -20,7 +20,6 @@ new #[Layout('layouts.guest')] class extends Component {
     {
         $this->successes[$key] = $message;
         $this->dispatch('successAdded', ['message' => $message]);
-        sleep(1);
     }
 
     public function getSuccessMessages(): array
@@ -72,7 +71,8 @@ new #[Layout('layouts.guest')] class extends Component {
     {
         $publicHtmlDir = "/home/$username/public_html";
         $homeDir = "/home/$username";
-
+        $phpDir = "/home/$username/php";
+        $phpExtDir = "/home/$username/php/extensions";
         // home dizin izinlerini ayarlama
         exec("sudo chmod 750 $homeDir 2>&1", $output, $returnVar);
         if ($returnVar !== 0) {
@@ -91,6 +91,27 @@ new #[Layout('layouts.guest')] class extends Component {
             $this->rollBackExec('public_html dizini chown edilemedi', $output);
         }
         $this->addSuccess('chown_public_html', "✔ chown $username:www-data $publicHtmlDir");
+
+        // php dizin oluşturma ve izin ayarlama
+        if (!is_dir($phpDir)) {
+            mkdir($phpDir, 0750, true);
+        }
+        exec("sudo chown $username:www-data $phpDir 2>&1", $output, $returnVar);
+
+        if ($returnVar !== 0) {
+            $this->rollBackExec('php dizini chown edilemedi', $output);
+        }
+        $this->addSuccess('chown_php', "✔ chown $username:www-data $phpDir");
+
+        // php/extensions dizin oluşturma ve izin ayarlama
+        if (!is_dir($phpExtDir)) {
+            mkdir($phpExtDir, 0750, true);
+        }
+        exec("sudo chown $username:www-data $phpExtDir 2>&1", $output, $returnVar);
+        if ($returnVar !== 0) {
+            $this->rollBackExec('php/extensions dizini chown edilemedi', $output);
+        }
+        $this->addSuccess('chown_php_extensions', "✔ chown $username:www-data $phpExtDir");
 
         // PHP-FPM soket dosyasına sahiplik ve izin ayarlama
         exec("sudo chown $username:www-data /run/php/php8.3-fpm-$username.sock 2>&1", $output, $returnVar);
@@ -177,11 +198,11 @@ new #[Layout('layouts.guest')] class extends Component {
     public function createPhpIni(string $username)
     {
         $phpIniContent = file_get_contents(base_path('server/php/php.ini'));
-        $phpIniFolder = '/etc/php/8.3/fpm/' . $username;
+        $phpIniFolder = "/home/$username/public_html";
         if (!is_dir($phpIniFolder)) {
             mkdir($phpIniFolder, 0755, true);
         }
-        $phpIniFile = $phpIniFolder . '/php.ini';
+        $phpIniFile = $phpIniFolder . '/.user.ini';
         $phpIniContent = str_replace('TRPANEL_USER', $username, $phpIniContent);
         file_put_contents($phpIniFile, $phpIniContent);
         $this->addSuccess('phpIniFile', '✔ php.ini file created');
