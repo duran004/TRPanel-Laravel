@@ -20,60 +20,50 @@ new #[Layout('layouts.guest')] class extends Component {
     {
         $this->successes[$key] = $message;
     }
+
     public function getSuccessMessages(): array
     {
-        return $this->successMessages;
+        return $this->successes;
     }
-    public function rollBackExec(string $message): void
+
+    public function rollBackExec(string $message, $output = null): void
     {
         Log::info($message);
-        /**
-         *  @todo: Hata durumunda işlemleri geri al
-         */
+        if ($output) {
+            Log::info('Command Output: ' . implode("\n", $output));
+        }
         throw new Exception($message);
     }
+
     public function createUser(string $username, string $password)
     {
-        /**
-         *  Önce kullanıcıyı oluştur
-         */
-        exec("sudo adduser --disabled-password --gecos '' $username", $output, $returnVar);
+        // Kullanıcı oluşturma
+        exec("sudo adduser --disabled-password --gecos '' $username 2>&1", $output, $returnVar);
         if ($returnVar !== 0) {
-            $this->rollBackExec('Kullanıcı oluşturulamadı');
+            $this->rollBackExec('Kullanıcı oluşturulamadı', $output);
         }
         $this->addSuccess('createUserCommand', '✔ User created');
-        /**
-         *  Kullanıcıya şifre ayarla
-         */
-        exec("echo '$username:$password' | sudo chpasswd", $output, $returnVar);
+
+        // Şifre ayarlama
+        exec("echo '$username:$password' | sudo chpasswd 2>&1", $output, $returnVar);
         if ($returnVar !== 0) {
-            $this->rollBackExec('Şifre ayarlanamadı ');
+            $this->rollBackExec('Şifre ayarlanamadı', $output);
         }
         $this->addSuccess('setPasswordCommand', '✔ Password set');
-        /**
-         *  Kullanıcıya ev dizinini ayarla
-         */
-        exec("sudo usermod -d /home/$username -m $username", $output, $returnVar);
+
+        // Ev dizini ayarlama
+        exec("sudo usermod -d /home/$username -m $username 2>&1", $output, $returnVar);
         if ($returnVar !== 0) {
-            $this->rollBackExec('Ev dizini ayarlanamadı ');
+            $this->rollBackExec('Ev dizini ayarlanamadı', $output);
         }
         $this->addSuccess('setHomeDirectoryCommand', '✔ Home directory set');
-        /**
-         *  Kullanıcıya geçiş yap
-         */
-        exec("sudo su - $username", $output, $returnVar);
+
+        // İzinleri ayarlama
+        exec("sudo chmod 750 /home/$username 2>&1", $output, $returnVar);
         if ($returnVar !== 0) {
-            $this->rollBackExec('Kullanıcıya geçiş yapılamadı');
+            $this->rollBackExec('Ev dizini izinleri ayarlanamadı', $output);
         }
-        $this->addSuccess('loginUserCommand', '✔ User logged in');
-        /**
-         *  Kullanıcıya ev dizinini ayarla
-         */
-        exec("sudo chmod 750 /home/$username", $output, $returnVar);
-        if ($returnVar !== 0) {
-            $this->rollBackExec('Ev dizini izinleri ayarlanamadı');
-        }
-        $this->addSuccess('chmd', "✔ chmod 750 /home/$username");
+        $this->addSuccess('chmod', "✔ chmod 750 /home/$username");
     }
 
     public function addPermission(string $username)
@@ -81,102 +71,102 @@ new #[Layout('layouts.guest')] class extends Component {
         $publicHtmlDir = "/home/$username/public_html";
         $homeDir = "/home/$username";
 
-        // Apache'nin erişimi için home dizin izinlerini ayarlayın
-        exec("sudo chmod 750 $homeDir", $output, $returnVar);
+        // home dizin izinlerini ayarlama
+        exec("sudo chmod 750 $homeDir 2>&1", $output, $returnVar);
         if ($returnVar !== 0) {
-            $this->rollBackExec('home dizini izinleri ayarlanamadı');
+            $this->rollBackExec('home dizini izinleri ayarlanamadı', $output);
         }
         $this->addSuccess('chmod_home', "✔ chmod 750 $homeDir");
 
-        // public_html dizini oluşturma ve izin ayarlama
+        // public_html oluşturma ve izin ayarlama
         if (!is_dir($publicHtmlDir)) {
             mkdir($publicHtmlDir, 0750, true);
             file_put_contents("$publicHtmlDir/index.php", "<?php\n phpinfo();");
         }
 
-        exec("sudo chown $username:www-data $publicHtmlDir", $output, $returnVar);
+        exec("sudo chown $username:www-data $publicHtmlDir 2>&1", $output, $returnVar);
         if ($returnVar !== 0) {
-            $this->rollBackExec('public_html dizini chown edilemedi');
+            $this->rollBackExec('public_html dizini chown edilemedi', $output);
         }
         $this->addSuccess('chown_public_html', "✔ chown $username:www-data $publicHtmlDir");
 
         // PHP-FPM soket dosyasına sahiplik ve izin ayarlama
-        exec("sudo chown $username:www-data /run/php/php8.3-fpm-$username.sock", $output, $returnVar);
+        exec("sudo chown $username:www-data /run/php/php8.3-fpm-$username.sock 2>&1", $output, $returnVar);
         if ($returnVar !== 0) {
-            $this->rollBackExec('php-fpm soketi chown edilemedi');
+            $this->rollBackExec('php-fpm soketi chown edilemedi', $output);
         }
-        exec("sudo chmod 0660 /run/php/php8.3-fpm-$username.sock", $output, $returnVar);
+        exec("sudo chmod 0660 /run/php/php8.3-fpm-$username.sock 2>&1", $output, $returnVar);
         if ($returnVar !== 0) {
-            $this->rollBackExec('php-fpm soketi chmod edilemedi');
+            $this->rollBackExec('php-fpm soketi chmod edilemedi', $output);
         }
 
-        // public_html dizinine Apache'nin erişimi için izinleri ayarlayın
-        exec("sudo chmod 750 $publicHtmlDir", $output, $returnVar);
+        // public_html izinlerini ayarlama
+        exec("sudo chmod 750 $publicHtmlDir 2>&1", $output, $returnVar);
         if ($returnVar !== 0) {
-            $this->rollBackExec('public_html dizini izinleri ayarlanamadı');
+            $this->rollBackExec('public_html dizini izinleri ayarlanamadı', $output);
         }
         $this->addSuccess('chmod_public_html', "✔ chmod 750 $publicHtmlDir");
 
-        // Kullanıcıyı www-data grubuna ekle
-        exec("sudo usermod -a -G $username www-data", $output, $returnVar);
+        // Kullanıcıyı www-data grubuna ekleme
+        exec("sudo usermod -a -G www-data $username 2>&1", $output, $returnVar);
         if ($returnVar !== 0) {
-            $this->rollBackExec('Kullanıcı www-data grubuna eklenemedi: ' . implode("\n", $output));
+            $this->rollBackExec('Kullanıcı www-data grubuna eklenemedi', $output);
         }
 
-        // Apache varsayılan sitesini devre dışı bırak
-        exec('sudo a2dissite 000-default.conf', $output, $returnVar);
+        // Apache varsayılan sitesini devre dışı bırakma
+        exec('sudo a2dissite 000-default.conf 2>&1', $output, $returnVar);
         if ($returnVar !== 0) {
-            $this->rollBackExec('000-default.conf kaldırılamadı');
+            $this->rollBackExec('000-default.conf kaldırılamadı', $output);
         }
         $this->addSuccess('a2dissite', '✔ a2dissite 000-default.conf');
 
-        // /home dizini için son düzenlemeler
-        exec("sudo chmod 755 /home/$username", $output, $returnVar);
+        // Son olarak ev dizini izinlerini ayarlama
+        exec("sudo chmod 755 /home/$username 2>&1", $output, $returnVar);
         if ($returnVar !== 0) {
-            $this->rollBackExec('home dizini izinleri ayarlanamadı');
+            $this->rollBackExec('home dizini izinleri ayarlanamadı', $output);
         }
         $this->addSuccess('chmod_home', '✔ chmod 755 /home/$username');
     }
 
     public function reloadSystem()
     {
-        exec('sudo systemctl reload php8.3-fpm', $output, $returnVar);
+        // PHP-FPM ve Apache yeniden yükle
+        exec('sudo systemctl reload php8.3-fpm 2>&1', $output, $returnVar);
         if ($returnVar !== 0) {
-            $this->rollBackExec('Failed to reload PHP-FPM: ' . implode("\n", $output));
+            $this->rollBackExec('Failed to reload PHP-FPM', $output);
         }
 
-        // Apache'yi yeniden başlat
-        exec('sudo systemctl reload apache2', $output, $returnVar);
+        exec('sudo systemctl reload apache2 2>&1', $output, $returnVar);
         if ($returnVar !== 0) {
-            $this->rollBackExec('Failed to reload Apache: ' . implode("\n", $output));
+            $this->rollBackExec('Failed to reload Apache', $output);
         }
     }
+
     public function addPhpFpm(string $username)
     {
-        //php-fpm config dosyasına kullanıcı ekleme
+        // php-fpm config dosyasına kullanıcı ekleme
         $phpFpmConfigContent = file_get_contents(base_path('server/php/php-fpm.conf'));
         $phpFpmConfigContent = str_replace('TRPANEL_USER', $username, $phpFpmConfigContent);
         $phpFpmConfigFile = '/etc/php/8.3/fpm/pool.d/' . $username . '.conf';
-        //apache2 config dosyasına kullanıcı ekleme
+
+        // apache2 config dosyasına kullanıcı ekleme
         $apache2ConfigContent = file_get_contents(base_path('server/apache/apache.conf'));
         $apache2ConfigContent = str_replace('TRPANEL_USER', $username, $apache2ConfigContent);
-        $DOMAIN_NAME = 'localhost'; //$_SERVER['HTTP_HOST'];
+        $DOMAIN_NAME = 'localhost';
         $apache2ConfigContent = str_replace('DOMAIN_NAME', $DOMAIN_NAME, $apache2ConfigContent);
         $apache2ConfigFile = '/etc/apache2/sites-available/' . $username . '.conf';
-        /**
-         *  php-fpm config dosyasına kullanıcı ekle
-         */
+
+        // php-fpm config dosyasına kullanıcı ekle
         file_put_contents($phpFpmConfigFile, $phpFpmConfigContent);
-        exec('sudo systemctl restart php8.3-fpm', $output, $returnVar);
+        exec('sudo systemctl restart php8.3-fpm 2>&1', $output, $returnVar);
         if ($returnVar !== 0) {
             $this->rollBackExec('php-fpm yeniden başlatılamadı: ' . implode("\n", $output));
         }
         $this->addSuccess('phpFpmConfigFile', '✔ php-fpm config file created');
-        /**
-         *  apache2 config dosyasına kullanıcı ekle
-         */
+
+        // apache2 config dosyasına kullanıcı ekle
         file_put_contents($apache2ConfigFile, $apache2ConfigContent);
-        exec('sudo a2ensite ' . $username . '.conf', $output, $returnVar);
+        exec('sudo a2ensite ' . $username . '.conf 2>&1', $output, $returnVar);
         if ($returnVar !== 0) {
             $this->rollBackExec('apache2 config dosyası oluşturulamadı: ' . implode("\n", $output));
         }
@@ -194,9 +184,7 @@ new #[Layout('layouts.guest')] class extends Component {
         file_put_contents($phpIniFile, $phpIniContent);
         $this->addSuccess('phpIniFile', '✔ php.ini file created');
     }
-    /**
-     * Handle an incoming registration request.
-     */
+
     public function register(): void
     {
         $validated = $this->validate([
@@ -206,26 +194,24 @@ new #[Layout('layouts.guest')] class extends Component {
             'password' => ['required', 'string', 'confirmed', Rules\Password::defaults()],
         ]);
         $validated['password'] = Hash::make($validated['password']);
-        // eğer linux ise home altına windows ise C:/temp/ altına klasör oluştur
+
         try {
             $userFolder = env('LINUX_HOME') . $validated['folder'];
             if (strtoupper(substr(PHP_OS, 0, 3)) === 'WIN') {
                 $userFolder = env('WINDOWS_HOME') . $validated['folder'];
                 if (!file_exists($userFolder)) {
-                    $oldUmask = umask(0); // Geçici olarak dosya izinlerini değiştir
+                    $oldUmask = umask(0);
                     mkdir($userFolder, 0777, true);
-                    umask($oldUmask); // Eski dosya izinlerini geri yükle
+                    umask($oldUmask);
                 } else {
                     $this->addError('folder', 'Folder already exists');
                     return;
                 }
             } else {
-                //linux
                 $username = $validated['folder'];
                 $password = $validated['password'];
                 $this->createUser($username, $password);
                 $this->addPhpFpm($username);
-
                 $this->addPermission($username);
                 $this->createPhpIni($username);
                 $this->reloadSystem();
@@ -234,14 +220,14 @@ new #[Layout('layouts.guest')] class extends Component {
         } catch (Exception $e) {
             throw new Exception($e->getMessage());
         }
+
         $user = User::create($validated);
         event(new Registered($user));
         Auth::login($user);
-
         $this->redirect(route('dashboard', absolute: false), navigate: true);
     }
-}; ?>
-
+};
+?>
 <div>
     <form wire:submit="register">
         <!-- Name -->
