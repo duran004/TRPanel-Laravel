@@ -38,6 +38,12 @@ new #[Layout('layouts.guest')] class extends Component {
 
     public function createUser(string $username, string $password)
     {
+        //trpanele giriş yap
+        exec('sudo -i -u trpanel', $output, $returnVar);
+        if ($returnVar !== 0) {
+            $this->rollBackExec('Failed to login to trpanel', $output);
+        }
+        $this->addSuccess('loginCommand', '✔ Logged in to trpanel');
         // Kullanıcı oluşturma
         exec("sudo adduser --disabled-password --gecos '' $username 2>&1", $output, $returnVar);
         if ($returnVar !== 0) {
