@@ -174,6 +174,8 @@ new #[Layout('layouts.guest')] class extends Component {
         } else {
             Log::info('Failed to get current user');
         }
+        $envVars = shell_exec('printenv');
+        Log::info('Env vars ' . $envVars);
         // php-fpm config dosyasına kullanıcı ekleme
         $phpFpmConfigContent = file_get_contents(base_path('server/php/php-fpm.conf'));
         $phpFpmConfigContent = str_replace('TRPANEL_USER', $username, $phpFpmConfigContent);
