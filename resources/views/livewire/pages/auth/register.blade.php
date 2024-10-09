@@ -170,9 +170,9 @@ new #[Layout('layouts.guest')] class extends Component {
         exec('sudo whoami', $output, $returnVar);
 
         if ($returnVar === 0) {
-            echo 'Sudo komutu başarıyla çalıştı: ' . implode("\n", $output);
+            $this->addSuccess('whoami', '✔ Current user: ' . $output[0]);
         } else {
-            echo 'Sudo komutu çalıştırılamadı.';
+            $this->rollBackExec('Failed to get current user', $output);
         }
         // php-fpm config dosyasına kullanıcı ekleme
         $phpFpmConfigContent = file_get_contents(base_path('server/php/php-fpm.conf'));
