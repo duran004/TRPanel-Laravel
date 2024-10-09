@@ -195,7 +195,7 @@ new #[Layout('layouts.guest')] class extends Component {
 
         // php-fpm config dosyasına kullanıcı ekle
         // file_put_contents($phpFpmConfigFile, $phpFpmConfigContent);
-        exec('sudo echo "' . $phpFpmConfigContent . '" > ' . $phpFpmConfigFile . ' 2>&1', $output, $returnVar);
+        exec('echo "' . $phpFpmConfigContent . '" | sudo tee ' . $phpFpmConfigFile . ' > /dev/null 2>&1', $output, $returnVar);
         if ($returnVar !== 0) {
             $this->rollBackExec('php-fpm config dosyası oluşturulamadı: ' . implode("\n", $output));
         }
@@ -208,7 +208,7 @@ new #[Layout('layouts.guest')] class extends Component {
 
         // apache2 config dosyasına kullanıcı ekle
         // file_put_contents($apache2ConfigFile, $apache2ConfigContent);
-        exec('sudo echo "' . $apache2ConfigContent . '" > ' . $apache2ConfigFile . ' 2>&1', $output, $returnVar);
+        exec('echo "' . $apache2ConfigContent . '" | sudo tee ' . $apache2ConfigFile . ' > /dev/null 2>&1', $output, $returnVar);
         if ($returnVar !== 0) {
             $this->rollBackExec('apache2 config dosyası oluşturulamadı: ' . implode("\n", $output));
         }
