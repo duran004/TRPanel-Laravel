@@ -270,6 +270,9 @@ new #[Layout('layouts.guest')] class extends Component {
                 $this->addSuccess('apache2ConfigFile', '✔ apache2 config file created');
             }
         } catch (Exception $e) {
+            Log::error($e->getMessage());
+            Log::error($e->getTraceAsString());
+
             throw new Exception($e->getMessage());
         }
 
