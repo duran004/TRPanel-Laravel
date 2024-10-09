@@ -167,6 +167,13 @@ new #[Layout('layouts.guest')] class extends Component {
 
     public function addPhpFpm(string $username)
     {
+        exec('sudo whoami', $output, $returnVar);
+
+        if ($returnVar === 0) {
+            echo 'Sudo komutu başarıyla çalıştı: ' . implode("\n", $output);
+        } else {
+            echo 'Sudo komutu çalıştırılamadı.';
+        }
         // php-fpm config dosyasına kullanıcı ekleme
         $phpFpmConfigContent = file_get_contents(base_path('server/php/php-fpm.conf'));
         $phpFpmConfigContent = str_replace('TRPANEL_USER', $username, $phpFpmConfigContent);
