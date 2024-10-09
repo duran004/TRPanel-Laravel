@@ -176,8 +176,6 @@ new #[Layout('layouts.guest')] class extends Component {
 
         if ($returnVar === 0) {
             Log::info('Current user: ' . $output[0]);
-        } else {
-            Log::info('Failed to get current user');
         }
         $envVars = shell_exec('printenv');
         Log::info('Env vars ' . $envVars);
