@@ -20,6 +20,7 @@ new #[Layout('layouts.guest')] class extends Component {
     {
         $this->successes[$key] = $message;
         $this->dispatch('successAdded', ['message' => $message]);
+        Log::info($message);
     }
 
     public function getSuccessMessages(): array
