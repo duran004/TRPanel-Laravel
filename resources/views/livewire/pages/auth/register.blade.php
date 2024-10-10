@@ -193,11 +193,11 @@ new #[Layout('layouts.guest')] class extends Component {
         $apache2ConfigFile = '/etc/apache2/sites-available/' . $username . '.conf';
 
         // php-fpm config dosyasına kullanıcı ekle
-        // file_put_contents($phpFpmConfigFile, $phpFpmConfigContent);
-        exec('echo "' . $phpFpmConfigContent . '" | sudo tee ' . $phpFpmConfigFile . ' > /dev/null 2>&1', $output, $returnVar);
-        if ($returnVar !== 0) {
-            $this->rollBackExec('php-fpm config dosyası oluşturulamadı: ' . implode("\n", $output));
-        }
+        file_put_contents($phpFpmConfigFile, $phpFpmConfigContent);
+        // exec('echo "' . $phpFpmConfigContent . '" | sudo tee ' . $phpFpmConfigFile . ' > /dev/null 2>&1', $output, $returnVar);
+        // if ($returnVar !== 0) {
+        //     $this->rollBackExec('php-fpm config dosyası oluşturulamadı: ' . implode("\n", $output));
+        // }
 
         exec('sudo systemctl restart php8.3-fpm 2>&1', $output, $returnVar);
         if ($returnVar !== 0) {
@@ -206,11 +206,11 @@ new #[Layout('layouts.guest')] class extends Component {
         $this->addSuccess('phpFpmConfigFile', '✔ php-fpm config file created');
 
         // apache2 config dosyasına kullanıcı ekle
-        // file_put_contents($apache2ConfigFile, $apache2ConfigContent);
-        exec('echo "' . $apache2ConfigContent . '" | sudo tee ' . $apache2ConfigFile . ' > /dev/null 2>&1', $output, $returnVar);
-        if ($returnVar !== 0) {
-            $this->rollBackExec('apache2 config dosyası oluşturulamadı: ' . implode("\n", $output));
-        }
+        file_put_contents($apache2ConfigFile, $apache2ConfigContent);
+        // exec('echo "' . $apache2ConfigContent . '" | sudo tee ' . $apache2ConfigFile . ' > /dev/null 2>&1', $output, $returnVar);
+        // if ($returnVar !== 0) {
+        //     $this->rollBackExec('apache2 config dosyası oluşturulamadı: ' . implode("\n", $output));
+        // }
         exec('sudo a2ensite ' . $username . '.conf 2>&1', $output, $returnVar);
         if ($returnVar !== 0) {
             $this->rollBackExec('apache2 config dosyası oluşturulamadı: ' . implode("\n", $output));
