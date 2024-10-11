@@ -75,7 +75,7 @@ new #[Layout('layouts.guest')] class extends Component {
         $phpExtDir = "/home/$username/php/extensions";
 
         // Home dizin sahipliği ve izinlerini ayarlama
-        exec("sudo chown -R $username:www-data $homeDir 2>&1", $output, $returnVar);
+        exec("sudo chown -R $username:$username $homeDir 2>&1", $output, $returnVar);
         if ($returnVar !== 0) {
             $this->rollBackExec('Home dizini sahipliği ayarlanamadı', $output);
         }
