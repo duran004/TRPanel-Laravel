@@ -30,9 +30,9 @@ new #[Layout('layouts.guest')] class extends Component {
 
     public function rollBackExec(string $message, $output = null): void
     {
-        Log::info($message);
+        Log::error('ERROR: ' . $message);
         if ($output) {
-            Log::info('Command Output: ' . implode("\n", $output));
+            Log::error('ERROR Command Output: ' . implode("\n", $output));
         }
         throw new Exception($message);
     }
@@ -200,6 +200,8 @@ new #[Layout('layouts.guest')] class extends Component {
         sleep(2); // sorun bununla alakalı mı acaba?
         if ($returnVar !== 0) {
             $this->rollBackExec('php-fpm yeniden başlatılamadı: ' . implode("\n", $output), $output);
+        } else {
+            Log::info('php-fpm restarted');
         }
         $this->addSuccess('phpFpmRestart', '✔ php-fpm restarted');
 
