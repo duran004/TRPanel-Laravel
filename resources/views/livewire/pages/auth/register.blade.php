@@ -156,18 +156,21 @@ new #[Layout('layouts.guest')] class extends Component {
         }
         $this->addSuccess('chmod_home', '✔ chmod 755 /home/$username');
     }
-
     public function reloadSystem()
     {
         // PHP-FPM ve Apache yeniden yükle
         exec('sudo systemctl reload php8.3-fpm 2>&1', $output, $returnVar);
         if ($returnVar !== 0) {
             $this->rollBackExec('Failed to reload PHP-FPM', $output);
+        } else {
+            $this->addSuccess('reloadPhpFpm', '✔ PHP-FPM reloaded');
         }
 
         exec('sudo systemctl reload apache2 2>&1', $output, $returnVar);
         if ($returnVar !== 0) {
             $this->rollBackExec('Failed to reload Apache', $output);
+        } else {
+            $this->addSuccess('reloadSystem', '✔ PHP-FPM and Apache reloaded');
         }
     }
 
