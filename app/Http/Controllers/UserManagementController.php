@@ -32,7 +32,7 @@ class UserManagementController extends Controller
     /**
      * Kullanıcı oluşturma ve gerekli yapılandırmaların tümünü yapma metodu
      */
-    public function registerUser(Request $request)
+    public function createUser(Request $request)
     {
         $validated = $request->validate([
             'name' => 'required|string|max:255',
@@ -77,35 +77,17 @@ class UserManagementController extends Controller
         if ($response->getData()->status === false) {
             return $response;
         }
-
-        // PHP-FPM ve Apache yapılandırmalarını oluşturma
-        $response = $this->addPhpFpmAndApacheSite($request);
-
-        if ($response->getData()->status === false) {
-            return $response;
-        }
-
-        // Kullanıcıyı veritabanına kaydetme işlemi
-        $user = User::create([
-            'name' => $validated['name'],
-            'email' => $validated['email'],
-            'password' => Hash::make($validated['password']),
-        ]);
-
-        event(new Registered($user));
-        Auth::login($user);
-
         return response()->json(['status' => true, 'message' => __('Kullanıcı ve yapılandırmalar başarıyla tamamlandı')]);
     }
 
     /**
      * PHP-FPM ve Apache yapılandırmalarını oluşturma metodu
      */
-    public function addPhpFpmAndApacheSite(Request $request)
+    public function addPhpFpm(Request $request)
     {
         $username = $request->input('folder'); // Use 'folder' as it's the username equivalent in this context
         $phpFpmConfigFile = "/etc/php/8.3/fpm/pool.d/$username.conf";
-        $apacheConfigFile = "/etc/apache2/sites-available/$username.conf";
+
 
         $phpFpmTemplate = file_get_contents(base_path('server/php/php-fpm.conf'));
         $phpFpmContent = str_replace('TRPANEL_USER', $username, $phpFpmTemplate);
@@ -118,10 +100,12 @@ class UserManagementController extends Controller
             __('PHP-FPM yeniden yüklenemedi')
         );
 
-        if ($response->getData()->status === false) {
-            return $response;
-        }
-
+        return $response;
+    }
+    public function addApache(Request $request)
+    {
+        $username = $request->input('folder');
+        $apacheConfigFile = "/etc/apache2/sites-available/$username.conf";
         $apacheTemplate = file_get_contents(base_path('server/apache/apache.conf'));
         $apacheContent = str_replace('TRPANEL_USER', $username, $apacheTemplate);
         File::put($apacheConfigFile, $apacheContent);

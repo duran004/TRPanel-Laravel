@@ -11,14 +11,12 @@ Route::get('/user-management', function () {
 });
 
 
-// Route to handle user creation and initial setup (Step 1)
-Route::post('/user/register', [UserManagementController::class, 'registerUser'])->name('register.user');
+Route::post('/user/register', [UserManagementController::class, 'createUser'])->name('register.createUser');
+Route::post('/user/addApache', [UserManagementController::class, 'addApache'])->name('register.addApache');
+Route::post('/user/addPhpFpm', [UserManagementController::class, 'addPhpFpm'])->name('register.addPhpFpm');
 
-// Route to configure PHP-FPM and Apache (Step 2)
-Route::post('/user/add-php-fpm-apache', [UserManagementController::class, 'addPhpFpmAndApacheSite'])->name('user.add.phpfpm.apache');
 
-// Route to save user to the database (Step 3)
-Route::post('/user/save', [UserManagementController::class, 'saveUserToDatabase'])->name('user.save.database');
+
 
 
 

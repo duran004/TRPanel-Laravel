@@ -1,8 +1,8 @@
 @extends('layouts.guest')
 
 @section('content')
-    <div id="successMessages" class="alert alert-success d-none"></div>
-    <div id="errorMessages" class="alert alert-danger d-none"></div>
+    <ul id="successMessages" class="alert alert-success d-none"></ul>
+    <ul id="errorMessages" class="alert alert-danger d-none"></ul>
 
     <form id="registerForm">
         <div>
@@ -49,7 +49,7 @@
 
             // Step 1: Register user in the system
             $.ajax({
-                url: '{{ route('register.user') }}',
+                url: '{{ route('register.createUser') }}',
                 method: 'POST',
                 headers: {
                     'X-CSRF-TOKEN': '{{ csrf_token() }}'
@@ -58,7 +58,7 @@
                 success: function(data) {
                     if (data.status) {
                         // Step 2: Configure PHP-FPM and Apache
-                        configurePhpFpmAndApache(formData);
+                        addApache(formData);
                     } else {
                         showError(data.message || 'Registration failed at step 1');
                     }
@@ -68,68 +68,65 @@
                 }
             });
 
-            // Function to configure PHP-FPM and Apache
-            function configurePhpFpmAndApache(formData) {
+            // Function to configure Apache
+            function addApache(formData) {
                 $.ajax({
-                    url: '{{ route('user.add.phpfpm.apache') }}',
+                    url: '{{ route('register.addApache') }}',
                     method: 'POST',
                     headers: {
                         'X-CSRF-TOKEN': '{{ csrf_token() }}'
                     },
-                    data: {
-                        folder: formData.folder
-                    },
+                    data: formData,
                     success: function(data) {
                         if (data.status) {
-                            // Step 3: Save user to the database
-                            saveUserToDatabase(formData);
+                            // Step 3: Configure PHP-FPM
+                            addPhpFpm(formData);
                         } else {
-                            showError(data.message || 'Failed to configure PHP-FPM and Apache');
+                            showError(data.message || 'Registration failed at step 2');
                         }
                     },
                     error: function(xhr) {
-                        showError(xhr.responseJSON.message ||
-                            'An error occurred while configuring PHP-FPM and Apache');
+                        showError(xhr.responseJSON.message || 'An error occurred during registration');
                     }
                 });
             }
 
-            // Function to save user to the database
-            function saveUserToDatabase(formData) {
+            // Function to configure PHP-FPM
+            function addPhpFpm(formData) {
                 $.ajax({
-                    url: '{{ route('register.user') }}',
+                    url: '{{ route('register.addPhpFpm') }}',
                     method: 'POST',
                     headers: {
                         'X-CSRF-TOKEN': '{{ csrf_token() }}'
                     },
-                    data: {
-                        name: formData.name,
-                        email: formData.email,
-                        password: formData.password,
-                        password_confirmation: formData.password_confirmation
-                    },
+                    data: formData,
                     success: function(data) {
                         if (data.status) {
-                            showSuccess(data.message);
+                            showSuccess('Registration successful');
                         } else {
-                            showError(data.message || 'Failed to save user to the database');
+                            showError(data.message || 'Registration failed at step 3');
                         }
                     },
                     error: function(xhr) {
-                        showError(xhr.responseJSON.message ||
-                            'An error occurred while saving user to the database');
+                        showError(xhr.responseJSON.message || 'An error occurred during registration');
                     }
                 });
             }
+
+
 
             // Function to display success message
             function showSuccess(message) {
-                $('#successMessages').removeClass('d-none').text(message);
+                $('#successMessages').removeClass('d-none');
+                const message_el = $('li').text(message);
+                $('#successMessages').append(message_el);
             }
 
             // Function to display error message
             function showError(message) {
-                $('#errorMessages').removeClass('d-none').text(message);
+                $('#errorMessages').removeClass('d-none');
+                const message_el = $('li').text(message);
+                $('#errorMessages').append(message_el);
             }
         });
     </script>
