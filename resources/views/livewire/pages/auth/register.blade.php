@@ -151,23 +151,30 @@ new #[Layout('layouts.guest')] class extends Component {
         }
         $this->addSuccess('a2dissite', '✔ a2dissite 000-default.conf');
     }
+    public function reloadPhpFpm()
+    {
+        // PHP-FPM yeniden yükle
+        exec('sudo systemctl reload php8.3-fpm 2>&1', $output, $returnVar);
+        if ($returnVar !== 0) {
+            $this->rollBackExec('PHP-FPM yeniden yüklenemedi', $output);
+        }
+        $this->addSuccess('reloadPhpFpm', '✔ PHP-FPM yeniden yüklendi');
+    }
+
+    public function reloadApache()
+    {
+        // Apache yeniden yükle
+        exec('sudo systemctl reload apache2 2>&1', $output, $returnVar);
+        if ($returnVar !== 0) {
+            $this->rollBackExec('Apache yeniden yüklenemedi', $output);
+        }
+        $this->addSuccess('reloadApache', '✔ Apache yeniden yüklendi');
+    }
 
     public function reloadSystem()
     {
-        // PHP-FPM ve Apache yeniden yükle
-        exec('sudo systemctl reload php8.3-fpm 2>&1', $output, $returnVar);
-        if ($returnVar !== 0) {
-            $this->rollBackExec('Failed to reload PHP-FPM', $output);
-        } else {
-            $this->addSuccess('reloadPhpFpm', '✔ PHP-FPM reloaded');
-        }
-
-        exec('sudo systemctl reload apache2 2>&1', $output, $returnVar);
-        if ($returnVar !== 0) {
-            $this->rollBackExec('Failed to reload Apache', $output);
-        } else {
-            $this->addSuccess('reloadSystem', '✔ PHP-FPM and Apache reloaded');
-        }
+        $this->reloadPhpFpm();
+        $this->reloadApache();
     }
 
     public function addPhpFpm(string $username)
@@ -205,7 +212,7 @@ new #[Layout('layouts.guest')] class extends Component {
         }
         $this->addSuccess('a2ensite', '✔ a2ensite ' . $username . '.conf');
 
-        $this->reloadSystem();
+        $this->reloadPhpFpm();
     }
 
     public function createPhpIni(string $username)
