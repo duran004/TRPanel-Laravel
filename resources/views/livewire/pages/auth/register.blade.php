@@ -232,39 +232,28 @@ new #[Layout('layouts.guest')] class extends Component {
         ]);
         $validated['password'] = Hash::make($validated['password']);
 
-        try {
-            $userFolder = env('LINUX_HOME') . $validated['folder'];
-            if (strtoupper(substr(PHP_OS, 0, 3)) === 'WIN') {
-                $userFolder = env('WINDOWS_HOME') . $validated['folder'];
-                if (!file_exists($userFolder)) {
-                    $oldUmask = umask(0);
-                    mkdir($userFolder, 0777, true);
-                    umask($oldUmask);
-                } else {
-                    $this->addError('folder', 'Folder already exists');
-                    return;
-                }
+        $userFolder = env('LINUX_HOME') . $validated['folder'];
+        if (strtoupper(substr(PHP_OS, 0, 3)) === 'WIN') {
+            $userFolder = env('WINDOWS_HOME') . $validated['folder'];
+            if (!file_exists($userFolder)) {
+                $oldUmask = umask(0);
+                mkdir($userFolder, 0777, true);
+                umask($oldUmask);
             } else {
-                $username = $validated['folder'];
-                $password = $validated['password'];
-                //trpanele giriş yap
-                // exec('sudo -i -u trpanel', $output, $returnVar);
-                // if ($returnVar !== 0) {
-                //     $this->rollBackExec('Failed to login to trpanel', $output);
-                // }
-                $this->addSuccess('loginCommand', '✔ Logged in to trpanel');
-                $this->createUser($username, $password);
-                $this->addPhpFpm($username);
-                $this->addPermission($username);
-                $this->createPhpIni($username);
-                $this->reloadSystem();
-                $this->addSuccess('apache2ConfigFile', '✔ apache2 config file created');
+                $this->addError('folder', 'Folder already exists');
+                return;
             }
-        } catch (Exception $e) {
-            Log::error($e->getMessage());
-            Log::error($e->getTraceAsString());
+        } else {
+            $username = $validated['folder'];
+            $password = $validated['password'];
 
-            throw new Exception($e->getMessage());
+            $this->addSuccess('loginCommand', '✔ Logged in to trpanel');
+            $this->createUser($username, $password);
+            $this->addPhpFpm($username);
+            $this->addPermission($username);
+            $this->createPhpIni($username);
+            $this->reloadSystem();
+            $this->addSuccess('register', 'User created successfully');
         }
 
         $user = User::create($validated);
