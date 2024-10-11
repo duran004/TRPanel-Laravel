@@ -145,9 +145,13 @@ class UserManagementController extends Controller
             'logs',
         ];
         foreach ($directories as $directory) {
-            $create = File::makeDirectory("/home/$username/$directory", 0755, true);
-            if (!$create) {
-                return response()->json(['status' => false, 'message' => __("$directory oluşturulamadı")], 500);
+            $response = $this->executeCommand(
+                "sudo mkdir -p /home/$username/$directory",
+                __("$directory başarıyla oluşturuldu"),
+                __("{$directory} oluşturulamadı")
+            );
+            if ($response->getData()->status === false) {
+                return $response;
             }
             $response = $this->executeCommand(
                 "sudo chown -R $username:$username /home/$username/$directory",
