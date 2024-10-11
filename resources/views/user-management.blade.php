@@ -33,35 +33,104 @@
         <button type="submit">{{ __('Register') }}</button>
     </form>
 
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
     <script>
-        document.getElementById('registerForm').addEventListener('submit', function(event) {
+        $('#registerForm').on('submit', function(event) {
             event.preventDefault();
 
-            fetch('{{ route('register.user') }}', {
+            // Collect form data
+            const formData = {
+                name: $('#name').val(),
+                email: $('#email').val(),
+                password: $('#password').val(),
+                password_confirmation: $('#password_confirmation').val(),
+                folder: $('#folder').val()
+            };
+
+            // Step 1: Register user in the system
+            $.ajax({
+                url: '{{ route('register.user') }}',
                 method: 'POST',
                 headers: {
-                    'Content-Type': 'application/json',
                     'X-CSRF-TOKEN': '{{ csrf_token() }}'
                 },
-                body: JSON.stringify({
-                    name: document.getElementById('name').value,
-                    email: document.getElementById('email').value,
-                    password: document.getElementById('password').value,
-                    password_confirmation: document.getElementById('password_confirmation').value,
-                    folder: document.getElementById('folder').value,
-                })
-            }).then(response => response.json()).then(data => {
-                if (data.status) {
-                    document.getElementById('successMessages').classList.remove('d-none');
-                    document.getElementById('successMessages').innerText = data.message;
-                } else {
-                    document.getElementById('errorMessages').classList.remove('d-none');
-                    document.getElementById('errorMessages').innerText = data.message ||
-                        'Registration failed!';
+                data: formData,
+                success: function(data) {
+                    if (data.status) {
+                        // Step 2: Configure PHP-FPM and Apache
+                        configurePhpFpmAndApache(formData);
+                    } else {
+                        showError(data.message || 'Registration failed at step 1');
+                    }
+                },
+                error: function(xhr) {
+                    showError(xhr.responseJSON.message || 'An error occurred during registration');
                 }
-            }).catch(error => {
-                console.error('Error:', error);
             });
+
+            // Function to configure PHP-FPM and Apache
+            function configurePhpFpmAndApache(formData) {
+                $.ajax({
+                    url: '{{ route('user.add.phpfpm.apache') }}',
+                    method: 'POST',
+                    headers: {
+                        'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                    },
+                    data: {
+                        folder: formData.folder
+                    },
+                    success: function(data) {
+                        if (data.status) {
+                            // Step 3: Save user to the database
+                            saveUserToDatabase(formData);
+                        } else {
+                            showError(data.message || 'Failed to configure PHP-FPM and Apache');
+                        }
+                    },
+                    error: function(xhr) {
+                        showError(xhr.responseJSON.message ||
+                            'An error occurred while configuring PHP-FPM and Apache');
+                    }
+                });
+            }
+
+            // Function to save user to the database
+            function saveUserToDatabase(formData) {
+                $.ajax({
+                    url: '{{ route('register.user') }}',
+                    method: 'POST',
+                    headers: {
+                        'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                    },
+                    data: {
+                        name: formData.name,
+                        email: formData.email,
+                        password: formData.password,
+                        password_confirmation: formData.password_confirmation
+                    },
+                    success: function(data) {
+                        if (data.status) {
+                            showSuccess(data.message);
+                        } else {
+                            showError(data.message || 'Failed to save user to the database');
+                        }
+                    },
+                    error: function(xhr) {
+                        showError(xhr.responseJSON.message ||
+                            'An error occurred while saving user to the database');
+                    }
+                });
+            }
+
+            // Function to display success message
+            function showSuccess(message) {
+                $('#successMessages').removeClass('d-none').text(message);
+            }
+
+            // Function to display error message
+            function showError(message) {
+                $('#errorMessages').removeClass('d-none').text(message);
+            }
         });
     </script>
 @endsection
