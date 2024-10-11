@@ -83,7 +83,8 @@ new #[Layout('layouts.guest')] class extends Component {
 
         // public_html oluşturma ve izin ayarlama
         if (!is_dir($publicHtmlDir)) {
-            mkdir($publicHtmlDir, 0750, true);
+            // mkdir($publicHtmlDir, 0750, true);
+            File::makeDirectory($publicHtmlDir, 0750, true);
             file_put_contents(
                 "$publicHtmlDir/index.php",
                 "<?php\n 
