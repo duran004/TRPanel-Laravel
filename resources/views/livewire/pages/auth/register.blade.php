@@ -154,7 +154,7 @@ new #[Layout('layouts.guest')] class extends Component {
     public function reloadPhpFpm()
     {
         // PHP-FPM yeniden yükle
-        exec('sudo systemctl restart php8.3-fpm 2>&1', $output, $returnVar);
+        exec('sudo systemctl reload php8.3-fpm 2>&1', $output, $returnVar);
         if ($returnVar !== 0) {
             $this->rollBackExec('PHP-FPM yeniden yüklenemedi', $output);
         }
@@ -212,7 +212,7 @@ new #[Layout('layouts.guest')] class extends Component {
         }
         $this->addSuccess('a2ensite', '✔ a2ensite ' . $username . '.conf');
 
-        $this->reloadPhpFpm();
+        $this->reloadSystem();
     }
 
     public function createPhpIni(string $username)
