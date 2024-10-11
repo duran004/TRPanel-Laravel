@@ -67,19 +67,20 @@ new #[Layout('layouts.guest')] class extends Component {
         }
         $this->addSuccess('chmod', "✔ chmod 750 /home/$username");
     }
-    public function homedirPermission(string $username,string $who="trpanel"){
-        if ($who=="trpanel") {
+    public function homedirPermission(string $username, string $who = 'trpanel')
+    {
+        if ($who == 'trpanel') {
             exec("sudo chown -R trpanel:www-data /home/$username 2>&1", $output, $returnVar);
             if ($returnVar !== 0) {
                 $this->rollBackExec('Geçici sahiplik ayarlanamadı', $output);
             }
-            $this->addSuccess('chown', "Geçici sahiplik ayarlandı");
-        }else{
+            $this->addSuccess('chown', 'Geçici sahiplik ayarlandı');
+        } else {
             exec("sudo chown -R $username:$username /home/$username 2>&1", $output, $returnVar);
             if ($returnVar !== 0) {
                 $this->rollBackExec('Orijinal sahiplik ayarlanamadı', $output);
             }
-            $this->addSuccess('chown', "Orijinal sahiplik ayarlandı");
+            $this->addSuccess('chown', 'Orijinal sahiplik ayarlandı');
         }
     }
     public function addPermission(string $username)
@@ -90,18 +91,16 @@ new #[Layout('layouts.guest')] class extends Component {
             $this->rollBackExec('Home dizini oluşturulamadı', $output);
         }
 
-        $this->homedirPermission($username,"trpanel");
+        $this->homedirPermission($username, 'trpanel');
 
         // public_html dizinini oluşturma ve izin ayarlama
-        if (!is_dir(/home/$username/public_html)) {
-            File::makeDirectory(/home/$username/public_html, 0755, true);
-            file_put_contents(
-                "/home/$username/public_html/index.php",
-                "<?php\n 
+        File::makeDirectory("/home/$username/public_html", 0755, true);
+        file_put_contents(
+            "/home/$username/public_html/index.php",
+            "<?php\n 
             echo 'Hello, $username!';\n
             phpinfo();",
-            );
-        }
+        );
 
         // PHP ve extensions dizinlerini oluşturma ve izin ayarlama
         foreach (["/home/$username/php", "/home/$username/php/extensions"] as $dir) {
@@ -111,7 +110,7 @@ new #[Layout('layouts.guest')] class extends Component {
         }
 
         // Sahipliği kullanıcıya geri verme
-        $this->homedirPermission($username,"user");
+        $this->homedirPermission($username, 'user');
         // public_html dizinini kullanıcıya atama
         exec("sudo chown -R $username:www-data /home/$username/public_html 2>&1", $output, $returnVar);
         if ($returnVar !== 0) {
@@ -123,7 +122,7 @@ new #[Layout('layouts.guest')] class extends Component {
         }
         $this->addSuccess('chmod_public_html', "✔ chmod 755 /home/$username/public_html");
         //@TRPANEL
-        $this->homedirPermission($username,"trpanel");
+        $this->homedirPermission($username, 'trpanel');
         // PHP-FPM soket dosyasına sahiplik ve izin ayarlama
         $fpmSocket = "/run/php/php8.3-fpm-$username.sock";
         if (file_exists($fpmSocket)) {
