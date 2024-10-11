@@ -202,7 +202,7 @@ new #[Layout('layouts.guest')] class extends Component {
 
         exec('sudo systemctl restart php8.3-fpm 2>&1', $output, $returnVar);
         if ($returnVar !== 0) {
-            $this->rollBackExec('php-fpm yeniden başlatılamadı: ' . implode("\n", $output));
+            $this->rollBackExec('php-fpm yeniden başlatılamadı: ' . implode("\n", $output), $output);
         }
         $this->addSuccess('phpFpmRestart', '✔ php-fpm restarted');
 
