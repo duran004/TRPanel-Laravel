@@ -203,6 +203,9 @@ new #[Layout('layouts.guest')] class extends Component {
         if ($returnVar !== 0) {
             $this->rollBackExec('apache2 config dosyası oluşturulamadı: ' . implode("\n", $output));
         }
+        $this->addSuccess('a2ensite', '✔ a2ensite ' . $username . '.conf');
+
+        $this->reloadSystem();
     }
 
     public function createPhpIni(string $username)
