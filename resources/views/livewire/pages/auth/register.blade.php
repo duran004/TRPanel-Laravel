@@ -199,7 +199,8 @@ new #[Layout('layouts.guest')] class extends Component {
         exec('sudo systemctl restart php8.3-fpm 2>&1', $output, $returnVar);
         sleep(2); // sorun bununla alakalı mı acaba?
         if ($returnVar !== 0) {
-            $this->rollBackExec('php-fpm yeniden başlatılamadı: ' . implode("\n", $output), $output);
+            // $this->rollBackExec('php-fpm yeniden başlatılamadı: ' . implode("\n", $output), $output);
+            Log::error('php-fpm restarted failed: ' . implode("\n", $output));
         } else {
             Log::info('php-fpm restarted');
         }
