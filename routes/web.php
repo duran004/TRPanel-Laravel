@@ -4,6 +4,18 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Dashboard\FolderController;
 use App\Http\Controllers\Dashboard\FileController;
 use App\Http\Controllers\DashBoardController;
+use App\Http\Controllers\UserManagementController;
+
+Route::get('/user-management', function () {
+    return view('user-management');
+});
+
+Route::post('/register/user', [UserManagementController::class, 'registerUser'])->name('register.user');
+
+
+
+
+
 
 
 Route::get('/', [DashBoardController::class, 'index'])
