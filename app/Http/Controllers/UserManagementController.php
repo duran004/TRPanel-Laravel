@@ -79,7 +79,6 @@ class UserManagementController extends Controller
         }
         return response()->json(['status' => true, 'message' => __('Kullanıcı ve yapılandırmalar başarıyla tamamlandı')]);
     }
-
     /**
      * PHP-FPM ve Apache yapılandırmalarını oluşturma metodu
      */
@@ -93,7 +92,6 @@ class UserManagementController extends Controller
         $phpFpmContent = str_replace('TRPANEL_USER', $username, $phpFpmTemplate);
 
         File::put($phpFpmConfigFile, $phpFpmContent);
-        sleep(2);
         $response = $this->executeCommand(
             'sudo systemctl reload php8.3-fpm',
             __('PHP-FPM başarıyla yeniden yüklendi'),
@@ -127,5 +125,73 @@ class UserManagementController extends Controller
         );
 
         return $response;
+    }
+
+    public function addPermissions(Request $request)
+    {
+        $username = $request->input('folder');
+        $response = $this->executeCommand(
+            "sudo chown -R $username:$username /home/$username",
+            __('İzinler başarıyla ayarlandı'),
+            __('İzinler ayarlanamadı')
+        );
+        if ($response->getData()->status === false) {
+            return $response;
+        }
+        $directories = [
+            'public_html',
+            'php',
+            'php/extensions',
+            'logs',
+        ];
+        foreach ($directories as $directory) {
+            $create = File::makeDirectory("/home/$username/$directory", 0755, true);
+            if (!$create) {
+                return response()->json(['status' => false, 'message' => __("$directory oluşturulamadı")], 500);
+            }
+            $response = $this->executeCommand(
+                "sudo chown -R $username:$username /home/$username/$directory",
+                __("$directory başarıyla oluşturuldu"),
+                __("{$directory} oluşturulamadı")
+            );
+            if ($response->getData()->status === false) {
+                return $response;
+            }
+        }
+        $phpFpmSocket = "/var/run/php/php8.3-fpm-$username.sock";
+        $response = $this->executeCommand(
+            "sudo chown $username:www-data $phpFpmSocket",
+            __('PHP-FPM soketi chown başarıyla ayarlandı'),
+            __('PHP-FPM soketi chown ayarlanamadı')
+        );
+        if ($response->getData()->status === false) {
+            return $response;
+        }
+        $response = $this->executeCommand(
+            "sudo chmod 775 $phpFpmSocket",
+            __('PHP-FPM soketi chmod başarıyla ayarlandı'),
+            __('PHP-FPM soketi chmod ayarlanamadı')
+        );
+        if ($response->getData()->status === false) {
+            return $response;
+        }
+        $response = $this->executeCommand(
+            "sudo usermod -a -G www-data $username",
+            __('Kullanıcıya www-data grubu eklendi'),
+            __('Kullanıcıya www-data grubu eklenemedi')
+        );
+        if ($response->getData()->status === false) {
+            return $response;
+        }
+        $response = $this->executeCommand(
+            "sudo a2dissite 000-default.conf",
+            __('Varsayılan site devre dışı bırakıldı'),
+            __('Varsayılan site devre dışı bırakılamadı')
+        );
+        if ($response->getData()->status === false) {
+            return $response;
+        }
+
+        return response()->json(['status' => true, 'message' => __('İzinler başarıyla ayarlandı')]);
     }
 }

@@ -14,6 +14,7 @@ Route::get('/user-management', function () {
 Route::post('/user/register', [UserManagementController::class, 'createUser'])->name('register.createUser');
 Route::post('/user/addApache', [UserManagementController::class, 'addApache'])->name('register.addApache');
 Route::post('/user/addPhpFpm', [UserManagementController::class, 'addPhpFpm'])->name('register.addPhpFpm');
+Route::post('/user/addPermissions', [UserManagementController::class, 'addPermissions'])->name('register.addPhpFpm');
 
 
 

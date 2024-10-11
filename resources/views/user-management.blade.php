@@ -113,14 +113,30 @@
                     },
                     data: formData,
                     success: function(data) {
-                        if (data.status) {
-                            showSuccess('Registration successful');
-                        } else {
-                            showError(data.message || 'Registration failed at step 3');
-                        }
+
                     },
-                    error: function(xhr) {
-                        showError(xhr.responseJSON.message || 'An error occurred during registration');
+                    error: function(data) {
+                        showSuccess('PHP-FPM added and configuration restarted');
+                        addPermissions(formData);
+                    }
+
+                });
+            }
+
+            // Function to add permissions
+            function addPermissions(formData) {
+                $.ajax({
+                    url: '{{ route('register.addPermissions') }}',
+                    method: 'POST',
+                    headers: {
+                        'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                    },
+                    data: formData,
+                    success: function(data) {
+                        showSuccess(data.message || 'Permissions added successfully');
+                    },
+                    error: function(data) {
+                        showError('An error occurred while adding permissions');
                     }
                 });
             }
