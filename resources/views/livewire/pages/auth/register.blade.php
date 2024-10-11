@@ -156,6 +156,7 @@ new #[Layout('layouts.guest')] class extends Component {
         Log::info('PHP-FPM yeniden yükleniyor');
         // PHP-FPM yeniden yükle
         exec('sudo systemctl reload php8.3-fpm 2>&1', $output, $returnVar);
+        sleep(2);
         if ($returnVar !== 0) {
             $this->rollBackExec('PHP-FPM yeniden yüklenemedi', $output);
         }
@@ -167,6 +168,7 @@ new #[Layout('layouts.guest')] class extends Component {
         Log::info('Apache yeniden yükleniyor');
         // Apache yeniden yükle
         exec('sudo apachectl graceful 2>&1', $output, $returnVar);
+        sleep(2);
         if ($returnVar !== 0) {
             $this->rollBackExec('Apache yeniden yüklenemedi', $output);
         }
