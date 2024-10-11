@@ -196,16 +196,6 @@ new #[Layout('layouts.guest')] class extends Component {
         file_put_contents($phpFpmConfigFile, $phpFpmConfigContent);
         $this->addSuccess('phpFpmConfigFile', '✔ php-fpm config file created ' . $phpFpmConfigFile);
 
-        exec('sudo systemctl restart php8.3-fpm 2>&1', $output, $returnVar);
-        sleep(2); // sorun bununla alakalı mı acaba?
-        Log::info('sleeping for 2 seconds');
-        if ($returnVar !== 0) {
-            Log::info('php-fpm restart failed: ');
-            Log::info(implode("\n", $output));
-        }
-        Log::info('php-fpm restarted');
-        $this->addSuccess('phpFpmRestart', '✔ php-fpm restarted');
-
         // apache2 config dosyasına kullanıcı ekle
         file_put_contents($apache2ConfigFile, $apache2ConfigContent);
         $this->addSuccess('apache2ConfigFile', '✔ apache2 config file created ' . $apache2ConfigFile);
