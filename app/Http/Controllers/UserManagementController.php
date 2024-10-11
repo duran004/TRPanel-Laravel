@@ -93,7 +93,7 @@ class UserManagementController extends Controller
         $phpFpmContent = str_replace('TRPANEL_USER', $username, $phpFpmTemplate);
 
         File::put($phpFpmConfigFile, $phpFpmContent);
-
+        sleep(2);
         $response = $this->executeCommand(
             'sudo systemctl reload php8.3-fpm',
             __('PHP-FPM başarıyla yeniden yüklendi'),
