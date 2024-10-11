@@ -248,10 +248,10 @@ new #[Layout('layouts.guest')] class extends Component {
                 $username = $validated['folder'];
                 $password = $validated['password'];
                 //trpanele giriş yap
-                exec('sudo -i -u trpanel', $output, $returnVar);
-                if ($returnVar !== 0) {
-                    $this->rollBackExec('Failed to login to trpanel', $output);
-                }
+                // exec('sudo -i -u trpanel', $output, $returnVar);
+                // if ($returnVar !== 0) {
+                //     $this->rollBackExec('Failed to login to trpanel', $output);
+                // }
                 $this->addSuccess('loginCommand', '✔ Logged in to trpanel');
                 $this->createUser($username, $password);
                 $this->addPhpFpm($username);
