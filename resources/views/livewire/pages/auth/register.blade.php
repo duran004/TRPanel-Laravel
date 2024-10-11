@@ -67,30 +67,36 @@ new #[Layout('layouts.guest')] class extends Component {
         }
         $this->addSuccess('chmod', "✔ chmod 750 /home/$username");
     }
+    public function homedirPermission(string $username,string $who="trpanel"){
+        if ($who=="trpanel") {
+            exec("sudo chown -R trpanel:www-data /home/$username 2>&1", $output, $returnVar);
+            if ($returnVar !== 0) {
+                $this->rollBackExec('Geçici sahiplik ayarlanamadı', $output);
+            }
+            $this->addSuccess('chown', "Geçici sahiplik ayarlandı");
+        }else{
+            exec("sudo chown -R $username:$username /home/$username 2>&1", $output, $returnVar);
+            if ($returnVar !== 0) {
+                $this->rollBackExec('Orijinal sahiplik ayarlanamadı', $output);
+            }
+            $this->addSuccess('chown', "Orijinal sahiplik ayarlandı");
+        }
+    }
     public function addPermission(string $username)
     {
-        $publicHtmlDir = "/home/$username/public_html";
-        $homeDir = "/home/$username";
-        $phpDir = "/home/$username/php";
-        $phpExtDir = "/home/$username/php/extensions";
-
         // Kullanıcıya ait home dizinini oluşturma ve sahiplik ayarlarını yapma
-        exec("sudo mkdir -p $homeDir 2>&1", $output, $returnVar);
+        exec("sudo mkdir -p /home/$username 2>&1", $output, $returnVar);
         if ($returnVar !== 0) {
             $this->rollBackExec('Home dizini oluşturulamadı', $output);
         }
 
-        // Dizinlerin sahipliğini geçici olarak trpanel kullanıcısına atama
-        exec("sudo chown -R trpanel:www-data $homeDir 2>&1", $output, $returnVar);
-        if ($returnVar !== 0) {
-            $this->rollBackExec('Geçici sahiplik ayarlanamadı', $output);
-        }
+        $this->homedirPermission($username,"trpanel");
 
         // public_html dizinini oluşturma ve izin ayarlama
-        if (!is_dir($publicHtmlDir)) {
-            File::makeDirectory($publicHtmlDir, 0755, true);
+        if (!is_dir(/home/$username/public_html)) {
+            File::makeDirectory(/home/$username/public_html, 0755, true);
             file_put_contents(
-                "$publicHtmlDir/index.php",
+                "/home/$username/public_html/index.php",
                 "<?php\n 
             echo 'Hello, $username!';\n
             phpinfo();",
@@ -98,29 +104,26 @@ new #[Layout('layouts.guest')] class extends Component {
         }
 
         // PHP ve extensions dizinlerini oluşturma ve izin ayarlama
-        foreach ([$phpDir, $phpExtDir] as $dir) {
+        foreach (["/home/$username/php", "/home/$username/php/extensions"] as $dir) {
             if (!is_dir($dir)) {
                 File::makeDirectory($dir, 0755, true);
             }
         }
 
         // Sahipliği kullanıcıya geri verme
-        exec("sudo chown -R $username:$username $homeDir 2>&1", $output, $returnVar);
-        if ($returnVar !== 0) {
-            $this->rollBackExec('Orijinal sahiplik ayarlanamadı', $output);
-        }
-
+        $this->homedirPermission($username,"user");
         // public_html dizinini kullanıcıya atama
-        exec("sudo chown -R $username:www-data $publicHtmlDir 2>&1", $output, $returnVar);
+        exec("sudo chown -R $username:www-data /home/$username/public_html 2>&1", $output, $returnVar);
         if ($returnVar !== 0) {
             $this->rollBackExec('public_html dizini sahipliği ayarlanamadı', $output);
         }
-        exec("sudo chmod 755 $publicHtmlDir 2>&1", $output, $returnVar);
+        exec("sudo chmod 755 /home/$username/public_html 2>&1", $output, $returnVar);
         if ($returnVar !== 0) {
             $this->rollBackExec('public_html dizini izinleri ayarlanamadı', $output);
         }
-        $this->addSuccess('chmod_public_html', "✔ chmod 755 $publicHtmlDir");
-
+        $this->addSuccess('chmod_public_html', "✔ chmod 755 /home/$username/public_html");
+        //@TRPANEL
+        $this->homedirPermission($username,"trpanel");
         // PHP-FPM soket dosyasına sahiplik ve izin ayarlama
         $fpmSocket = "/run/php/php8.3-fpm-$username.sock";
         if (file_exists($fpmSocket)) {
