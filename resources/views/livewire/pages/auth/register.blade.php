@@ -111,6 +111,7 @@ new #[Layout('layouts.guest')] class extends Component {
 
         // php ve php/extensions dizinlerini oluşturma ve izin ayarlama
         foreach ([$phpDir, $phpExtDir] as $dir) {
+            exec("sudo chown -R trpanel:www-data /home/$username 2>&1", $output, $returnVar);
             if (!is_dir($dir)) {
                 File::makeDirectory($dir, 0755, true);
             }
