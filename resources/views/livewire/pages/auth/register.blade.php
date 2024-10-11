@@ -76,10 +76,10 @@ new #[Layout('layouts.guest')] class extends Component {
 
         // Home dizin sahipliği ve izinlerini ayarlama
         exec("sudo chown -R trpanel:www-data /home/$username 2>&1", $output, $returnVar);
-
         if ($returnVar !== 0) {
             $this->rollBackExec('Home dizini sahipliği ayarlanamadı', $output);
         }
+
         exec("sudo chmod 755 $homeDir 2>&1", $output, $returnVar);
         if ($returnVar !== 0) {
             $this->rollBackExec('Home dizini izinleri ayarlanamadı', $output);
@@ -96,6 +96,8 @@ new #[Layout('layouts.guest')] class extends Component {
             phpinfo();",
             );
         }
+
+        // Home dizin sahipliğini kullanıcıya geri verme
         exec("sudo chown -R $username:$username /home/$username 2>&1", $output, $returnVar);
 
         // public_html dizinini kullanıcıya atama
@@ -111,7 +113,6 @@ new #[Layout('layouts.guest')] class extends Component {
 
         // php ve php/extensions dizinlerini oluşturma ve izin ayarlama
         foreach ([$phpDir, $phpExtDir] as $dir) {
-            exec("sudo chown -R trpanel:www-data /home/$username 2>&1", $output, $returnVar);
             if (!is_dir($dir)) {
                 File::makeDirectory($dir, 0755, true);
             }
@@ -127,13 +128,18 @@ new #[Layout('layouts.guest')] class extends Component {
         }
 
         // PHP-FPM soket dosyasına sahiplik ve izin ayarlama
-        exec("sudo chown $username:www-data /run/php/php8.3-fpm-$username.sock 2>&1", $output, $returnVar);
-        if ($returnVar !== 0) {
-            $this->rollBackExec('php-fpm soketi sahipliği ayarlanamadı', $output);
-        }
-        exec("sudo chmod 0660 /run/php/php8.3-fpm-$username.sock 2>&1", $output, $returnVar);
-        if ($returnVar !== 0) {
-            $this->rollBackExec('php-fpm soketi izinleri ayarlanamadı', $output);
+        $fpmSocket = "/run/php/php8.3-fpm-$username.sock";
+        if (file_exists($fpmSocket)) {
+            exec("sudo chown $username:www-data $fpmSocket 2>&1", $output, $returnVar);
+            if ($returnVar !== 0) {
+                $this->rollBackExec('php-fpm soketi sahipliği ayarlanamadı', $output);
+            }
+            exec("sudo chmod 0660 $fpmSocket 2>&1", $output, $returnVar);
+            if ($returnVar !== 0) {
+                $this->rollBackExec('php-fpm soketi izinleri ayarlanamadı', $output);
+            }
+        } else {
+            $this->rollBackExec('php-fpm soketi bulunamadı: ' . $fpmSocket);
         }
 
         // Kullanıcıyı www-data grubuna ekleme
