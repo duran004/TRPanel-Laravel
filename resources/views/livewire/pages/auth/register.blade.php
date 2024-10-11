@@ -164,7 +164,7 @@ new #[Layout('layouts.guest')] class extends Component {
     public function reloadApache()
     {
         // Apache yeniden yükle
-        exec('sudo systemctl reload apache2 2>&1', $output, $returnVar);
+        exec('sudo apachectl graceful 2>&1', $output, $returnVar);
         if ($returnVar !== 0) {
             $this->rollBackExec('Apache yeniden yüklenemedi', $output);
         }
