@@ -74,17 +74,17 @@ new #[Layout('layouts.guest')] class extends Component {
         $phpDir = "/home/$username/php";
         $phpExtDir = "/home/$username/php/extensions";
 
-        // Home dizin sahipliği ve izinlerini ayarlama
-        exec("sudo chown -R trpanel:www-data /home/$username 2>&1", $output, $returnVar);
+        // Kullanıcıya ait home dizinini oluşturma ve sahiplik ayarlarını yapma
+        exec("sudo mkdir -p $homeDir 2>&1", $output, $returnVar);
         if ($returnVar !== 0) {
-            $this->rollBackExec('Home dizini sahipliği ayarlanamadı', $output);
+            $this->rollBackExec('Home dizini oluşturulamadı', $output);
         }
 
-        exec("sudo chmod 755 $homeDir 2>&1", $output, $returnVar);
+        // Dizinlerin sahipliğini geçici olarak trpanel kullanıcısına atama
+        exec("sudo chown -R trpanel:www-data $homeDir 2>&1", $output, $returnVar);
         if ($returnVar !== 0) {
-            $this->rollBackExec('Home dizini izinleri ayarlanamadı', $output);
+            $this->rollBackExec('Geçici sahiplik ayarlanamadı', $output);
         }
-        $this->addSuccess('chmod_home', "✔ chmod 755 $homeDir");
 
         // public_html dizinini oluşturma ve izin ayarlama
         if (!is_dir($publicHtmlDir)) {
@@ -97,8 +97,18 @@ new #[Layout('layouts.guest')] class extends Component {
             );
         }
 
-        // Home dizin sahipliğini kullanıcıya geri verme
-        exec("sudo chown -R $username:$username /home/$username 2>&1", $output, $returnVar);
+        // PHP ve extensions dizinlerini oluşturma ve izin ayarlama
+        foreach ([$phpDir, $phpExtDir] as $dir) {
+            if (!is_dir($dir)) {
+                File::makeDirectory($dir, 0755, true);
+            }
+        }
+
+        // Sahipliği kullanıcıya geri verme
+        exec("sudo chown -R $username:$username $homeDir 2>&1", $output, $returnVar);
+        if ($returnVar !== 0) {
+            $this->rollBackExec('Orijinal sahiplik ayarlanamadı', $output);
+        }
 
         // public_html dizinini kullanıcıya atama
         exec("sudo chown -R $username:www-data $publicHtmlDir 2>&1", $output, $returnVar);
@@ -110,22 +120,6 @@ new #[Layout('layouts.guest')] class extends Component {
             $this->rollBackExec('public_html dizini izinleri ayarlanamadı', $output);
         }
         $this->addSuccess('chmod_public_html', "✔ chmod 755 $publicHtmlDir");
-
-        // php ve php/extensions dizinlerini oluşturma ve izin ayarlama
-        foreach ([$phpDir, $phpExtDir] as $dir) {
-            if (!is_dir($dir)) {
-                File::makeDirectory($dir, 0755, true);
-            }
-            exec("sudo chown -R $username:www-data $dir 2>&1", $output, $returnVar);
-            if ($returnVar !== 0) {
-                $this->rollBackExec("$dir dizini sahipliği ayarlanamadı", $output);
-            }
-            exec("sudo chmod 755 $dir 2>&1", $output, $returnVar);
-            if ($returnVar !== 0) {
-                $this->rollBackExec("$dir dizini izinleri ayarlanamadı", $output);
-            }
-            $this->addSuccess('chmod_' . basename($dir), "✔ chmod 755 $dir");
-        }
 
         // PHP-FPM soket dosyasına sahiplik ve izin ayarlama
         $fpmSocket = "/run/php/php8.3-fpm-$username.sock";
