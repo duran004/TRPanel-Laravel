@@ -75,7 +75,8 @@ new #[Layout('layouts.guest')] class extends Component {
         $phpExtDir = "/home/$username/php/extensions";
 
         // Home dizin sahipliği ve izinlerini ayarlama
-        exec("sudo chown -R $username:$username $homeDir 2>&1", $output, $returnVar);
+        exec("sudo chown -R www-data:www-data /home/$username 2>&1", $output, $returnVar);
+
         if ($returnVar !== 0) {
             $this->rollBackExec('Home dizini sahipliği ayarlanamadı', $output);
         }
@@ -95,6 +96,7 @@ new #[Layout('layouts.guest')] class extends Component {
             phpinfo();",
             );
         }
+        exec("sudo chown -R $username:$username /home/$username 2>&1", $output, $returnVar);
 
         // public_html dizinini kullanıcıya atama
         exec("sudo chown -R $username:www-data $publicHtmlDir 2>&1", $output, $returnVar);
