@@ -195,12 +195,9 @@ new #[Layout('layouts.guest')] class extends Component {
         // php-fpm config dosyasına kullanıcı ekle
         file_put_contents($phpFpmConfigFile, $phpFpmConfigContent);
         $this->addSuccess('phpFpmConfigFile', '✔ php-fpm config file created ' . $phpFpmConfigFile);
-        // exec('echo "' . $phpFpmConfigContent . '" | sudo tee ' . $phpFpmConfigFile . ' > /dev/null 2>&1', $output, $returnVar);
-        // if ($returnVar !== 0) {
-        //     $this->rollBackExec('php-fpm config dosyası oluşturulamadı: ' . implode("\n", $output));
-        // }
 
         exec('sudo systemctl restart php8.3-fpm 2>&1', $output, $returnVar);
+        sleep(2); // sorun bununla alakalı mı acaba?
         if ($returnVar !== 0) {
             $this->rollBackExec('php-fpm yeniden başlatılamadı: ' . implode("\n", $output), $output);
         }
@@ -209,10 +206,7 @@ new #[Layout('layouts.guest')] class extends Component {
         // apache2 config dosyasına kullanıcı ekle
         file_put_contents($apache2ConfigFile, $apache2ConfigContent);
         $this->addSuccess('apache2ConfigFile', '✔ apache2 config file created ' . $apache2ConfigFile);
-        // exec('echo "' . $apache2ConfigContent . '" | sudo tee ' . $apache2ConfigFile . ' > /dev/null 2>&1', $output, $returnVar);
-        // if ($returnVar !== 0) {
-        //     $this->rollBackExec('apache2 config dosyası oluşturulamadı: ' . implode("\n", $output));
-        // }
+
         exec('sudo a2ensite ' . $username . '.conf 2>&1', $output, $returnVar);
         if ($returnVar !== 0) {
             $this->rollBackExec('apache2 config dosyası oluşturulamadı: ' . implode("\n", $output));
