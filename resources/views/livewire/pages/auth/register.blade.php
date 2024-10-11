@@ -74,71 +74,68 @@ new #[Layout('layouts.guest')] class extends Component {
         $homeDir = "/home/$username";
         $phpDir = "/home/$username/php";
         $phpExtDir = "/home/$username/php/extensions";
-        // home dizin izinlerini ayarlama
-        exec("sudo chmod 750 $homeDir 2>&1", $output, $returnVar);
-        if ($returnVar !== 0) {
-            $this->rollBackExec('home dizini izinleri ayarlanamadı', $output);
-        }
-        $this->addSuccess('chmod_home', "✔ chmod 750 $homeDir");
 
-        // public_html oluşturma ve izin ayarlama
+        // Home dizin sahipliği ve izinlerini ayarlama
+        exec("sudo chown -R trpanel:www-data $homeDir 2>&1", $output, $returnVar);
+        if ($returnVar !== 0) {
+            $this->rollBackExec('Home dizini sahipliği ayarlanamadı', $output);
+        }
+        exec("sudo chmod 755 $homeDir 2>&1", $output, $returnVar);
+        if ($returnVar !== 0) {
+            $this->rollBackExec('Home dizini izinleri ayarlanamadı', $output);
+        }
+        $this->addSuccess('chmod_home', "✔ chmod 755 $homeDir");
+
+        // public_html dizinini oluşturma ve izin ayarlama
         if (!is_dir($publicHtmlDir)) {
-            // mkdir($publicHtmlDir, 0750, true);
-            File::makeDirectory($publicHtmlDir, 0750, true);
+            File::makeDirectory($publicHtmlDir, 0755, true);
             file_put_contents(
                 "$publicHtmlDir/index.php",
                 "<?php\n 
-                echo 'Hello, $username!';\n
-                phpinfo();",
+            echo 'Hello, $username!';\n
+            phpinfo();",
             );
         }
 
-        exec("sudo chown $username:www-data $publicHtmlDir 2>&1", $output, $returnVar);
+        // public_html dizinini kullanıcıya atama
+        exec("sudo chown -R trpanel:www-data $publicHtmlDir 2>&1", $output, $returnVar);
         if ($returnVar !== 0) {
-            $this->rollBackExec('public_html dizini chown edilemedi', $output);
+            $this->rollBackExec('public_html dizini sahipliği ayarlanamadı', $output);
         }
-        $this->addSuccess('chown_public_html', "✔ chown $username:www-data $publicHtmlDir");
-
-        // php dizin oluşturma ve izin ayarlama
-        if (!is_dir($phpDir)) {
-            mkdir($phpDir, 0750, true);
-        }
-        exec("sudo chown $username:www-data $phpDir 2>&1", $output, $returnVar);
-
-        if ($returnVar !== 0) {
-            $this->rollBackExec('php dizini chown edilemedi', $output);
-        }
-        $this->addSuccess('chown_php', "✔ chown $username:www-data $phpDir");
-
-        // php/extensions dizin oluşturma ve izin ayarlama
-        if (!is_dir($phpExtDir)) {
-            mkdir($phpExtDir, 0750, true);
-        }
-        exec("sudo chown $username:www-data $phpExtDir 2>&1", $output, $returnVar);
-        if ($returnVar !== 0) {
-            $this->rollBackExec('php/extensions dizini chown edilemedi', $output);
-        }
-        $this->addSuccess('chown_php_extensions', "✔ chown $username:www-data $phpExtDir");
-
-        // PHP-FPM soket dosyasına sahiplik ve izin ayarlama
-        exec("sudo chown $username:www-data /run/php/php8.3-fpm-$username.sock 2>&1", $output, $returnVar);
-        if ($returnVar !== 0) {
-            $this->rollBackExec('php-fpm soketi chown edilemedi', $output);
-        }
-        exec("sudo chmod 0660 /run/php/php8.3-fpm-$username.sock 2>&1", $output, $returnVar);
-        if ($returnVar !== 0) {
-            $this->rollBackExec('php-fpm soketi chmod edilemedi', $output);
-        }
-
-        // public_html izinlerini ayarlama
-        exec("sudo chmod 750 $publicHtmlDir 2>&1", $output, $returnVar);
+        exec("sudo chmod 755 $publicHtmlDir 2>&1", $output, $returnVar);
         if ($returnVar !== 0) {
             $this->rollBackExec('public_html dizini izinleri ayarlanamadı', $output);
         }
-        $this->addSuccess('chmod_public_html', "✔ chmod 750 $publicHtmlDir");
+        $this->addSuccess('chmod_public_html', "✔ chmod 755 $publicHtmlDir");
+
+        // php ve php/extensions dizinlerini oluşturma ve izin ayarlama
+        foreach ([$phpDir, $phpExtDir] as $dir) {
+            if (!is_dir($dir)) {
+                File::makeDirectory($dir, 0755, true);
+            }
+            exec("sudo chown -R trpanel:www-data $dir 2>&1", $output, $returnVar);
+            if ($returnVar !== 0) {
+                $this->rollBackExec("$dir dizini sahipliği ayarlanamadı", $output);
+            }
+            exec("sudo chmod 755 $dir 2>&1", $output, $returnVar);
+            if ($returnVar !== 0) {
+                $this->rollBackExec("$dir dizini izinleri ayarlanamadı", $output);
+            }
+            $this->addSuccess('chmod_' . basename($dir), "✔ chmod 755 $dir");
+        }
+
+        // PHP-FPM soket dosyasına sahiplik ve izin ayarlama
+        exec("sudo chown trpanel:www-data /run/php/php8.3-fpm-$username.sock 2>&1", $output, $returnVar);
+        if ($returnVar !== 0) {
+            $this->rollBackExec('php-fpm soketi sahipliği ayarlanamadı', $output);
+        }
+        exec("sudo chmod 0660 /run/php/php8.3-fpm-$username.sock 2>&1", $output, $returnVar);
+        if ($returnVar !== 0) {
+            $this->rollBackExec('php-fpm soketi izinleri ayarlanamadı', $output);
+        }
 
         // Kullanıcıyı www-data grubuna ekleme
-        exec("sudo usermod -a -G www-data $username 2>&1", $output, $returnVar);
+        exec('sudo usermod -a -G www-data trpanel 2>&1', $output, $returnVar);
         if ($returnVar !== 0) {
             $this->rollBackExec('Kullanıcı www-data grubuna eklenemedi', $output);
         }
@@ -149,14 +146,8 @@ new #[Layout('layouts.guest')] class extends Component {
             $this->rollBackExec('000-default.conf kaldırılamadı', $output);
         }
         $this->addSuccess('a2dissite', '✔ a2dissite 000-default.conf');
-
-        // Son olarak ev dizini izinlerini ayarlama
-        exec("sudo chmod 755 /home/$username 2>&1", $output, $returnVar);
-        if ($returnVar !== 0) {
-            $this->rollBackExec('home dizini izinleri ayarlanamadı', $output);
-        }
-        $this->addSuccess('chmod_home', '✔ chmod 755 /home/$username');
     }
+
     public function reloadSystem()
     {
         // PHP-FPM ve Apache yeniden yükle
