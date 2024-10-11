@@ -67,7 +67,6 @@ new #[Layout('layouts.guest')] class extends Component {
         }
         $this->addSuccess('chmod', "✔ chmod 750 /home/$username");
     }
-
     public function addPermission(string $username)
     {
         $publicHtmlDir = "/home/$username/public_html";
@@ -92,8 +91,8 @@ new #[Layout('layouts.guest')] class extends Component {
             file_put_contents(
                 "$publicHtmlDir/index.php",
                 "<?php\n 
-        echo 'Hello, $username!';\n
-        phpinfo();",
+            echo 'Hello, $username!';\n
+            phpinfo();",
             );
         }
 
