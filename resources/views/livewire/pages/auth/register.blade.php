@@ -76,7 +76,7 @@ new #[Layout('layouts.guest')] class extends Component {
         $phpExtDir = "/home/$username/php/extensions";
 
         // Home dizin sahipliği ve izinlerini ayarlama
-        exec("sudo chown -R trpanel:www-data $homeDir 2>&1", $output, $returnVar);
+        exec("sudo chown -R $username:www-data $homeDir 2>&1", $output, $returnVar);
         if ($returnVar !== 0) {
             $this->rollBackExec('Home dizini sahipliği ayarlanamadı', $output);
         }
@@ -92,13 +92,13 @@ new #[Layout('layouts.guest')] class extends Component {
             file_put_contents(
                 "$publicHtmlDir/index.php",
                 "<?php\n 
-            echo 'Hello, $username!';\n
-            phpinfo();",
+        echo 'Hello, $username!';\n
+        phpinfo();",
             );
         }
 
         // public_html dizinini kullanıcıya atama
-        exec("sudo chown -R trpanel:www-data $publicHtmlDir 2>&1", $output, $returnVar);
+        exec("sudo chown -R $username:www-data $publicHtmlDir 2>&1", $output, $returnVar);
         if ($returnVar !== 0) {
             $this->rollBackExec('public_html dizini sahipliği ayarlanamadı', $output);
         }
@@ -113,7 +113,7 @@ new #[Layout('layouts.guest')] class extends Component {
             if (!is_dir($dir)) {
                 File::makeDirectory($dir, 0755, true);
             }
-            exec("sudo chown -R trpanel:www-data $dir 2>&1", $output, $returnVar);
+            exec("sudo chown -R $username:www-data $dir 2>&1", $output, $returnVar);
             if ($returnVar !== 0) {
                 $this->rollBackExec("$dir dizini sahipliği ayarlanamadı", $output);
             }
@@ -125,7 +125,7 @@ new #[Layout('layouts.guest')] class extends Component {
         }
 
         // PHP-FPM soket dosyasına sahiplik ve izin ayarlama
-        exec("sudo chown trpanel:www-data /run/php/php8.3-fpm-$username.sock 2>&1", $output, $returnVar);
+        exec("sudo chown $username:www-data /run/php/php8.3-fpm-$username.sock 2>&1", $output, $returnVar);
         if ($returnVar !== 0) {
             $this->rollBackExec('php-fpm soketi sahipliği ayarlanamadı', $output);
         }
@@ -135,7 +135,7 @@ new #[Layout('layouts.guest')] class extends Component {
         }
 
         // Kullanıcıyı www-data grubuna ekleme
-        exec('sudo usermod -a -G www-data trpanel 2>&1', $output, $returnVar);
+        exec("sudo usermod -a -G www-data $username 2>&1", $output, $returnVar);
         if ($returnVar !== 0) {
             $this->rollBackExec('Kullanıcı www-data grubuna eklenemedi', $output);
         }
