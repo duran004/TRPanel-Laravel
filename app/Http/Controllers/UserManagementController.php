@@ -130,74 +130,71 @@ class UserManagementController extends Controller
     public function addPermissions(Request $request)
     {
         $username = $request->input('folder');
+
+        // Step 1: Set the ownership of the home directory
         $response = $this->executeCommand(
             "sudo chown -R $username:$username /home/$username",
-            __('İzinler başarıyla ayarlandı'),
-            __('İzinler ayarlanamadı')
+            __('Permissions successfully set for user directory'),
+            __('Failed to set permissions for user directory')
         );
+
         if ($response->getData()->status === false) {
             return $response;
         }
+
+        // Define directories to be created
         $directories = [
             'public_html',
             'php',
             'php/extensions',
             'logs',
         ];
+
         foreach ($directories as $directory) {
+            // Create the directory using sudo
             $response = $this->executeCommand(
                 "sudo mkdir -p /home/$username/$directory",
-                __("$directory başarıyla oluşturuldu"),
-                __("{$directory} oluşturulamadı")
+                __("$directory successfully created"),
+                __("Failed to create $directory")
             );
+
             if ($response->getData()->status === false) {
                 return $response;
             }
+
+            // Set the ownership of the created directory to the web server user (www-data)
             $response = $this->executeCommand(
-                "sudo chown -R $username:$username /home/$username/$directory",
-                __("$directory başarıyla oluşturuldu"),
-                __("{$directory} oluşturulamadı")
+                "sudo chown -R www-data:www-data /home/$username/$directory",
+                __("Ownership set for $directory"),
+                __("Failed to set ownership for $directory")
             );
+
             if ($response->getData()->status === false) {
                 return $response;
             }
-        }
-        $phpFpmSocket = "/var/run/php/php8.3-fpm-$username.sock";
-        $response = $this->executeCommand(
-            "sudo chown $username:www-data $phpFpmSocket",
-            __('PHP-FPM soketi chown başarıyla ayarlandı'),
-            __('PHP-FPM soketi chown ayarlanamadı')
-        );
-        if ($response->getData()->status === false) {
-            return $response;
-        }
-        $response = $this->executeCommand(
-            "sudo chmod 775 $phpFpmSocket",
-            __('PHP-FPM soketi chmod başarıyla ayarlandı'),
-            __('PHP-FPM soketi chmod ayarlanamadı')
-        );
-        if ($response->getData()->status === false) {
-            return $response;
-        }
-        $response = $this->executeCommand(
-            "sudo usermod -a -G www-data $username",
-            __('Kullanıcıya www-data grubu eklendi'),
-            __('Kullanıcıya www-data grubu eklenemedi')
-        );
-        if ($response->getData()->status === false) {
-            return $response;
-        }
-        $response = $this->executeCommand(
-            "sudo a2dissite 000-default.conf",
-            __('Varsayılan site devre dışı bırakıldı'),
-            __('Varsayılan site devre dışı bırakılamadı')
-        );
-        if ($response->getData()->status === false) {
-            return $response;
+
+            // Set permissions to allow the web server to access the directory
+            $response = $this->executeCommand(
+                "sudo chmod 755 /home/$username/$directory",
+                __("Permissions set for $directory"),
+                __("Failed to set permissions for $directory")
+            );
+
+            if ($response->getData()->status === false) {
+                return $response;
+            }
         }
 
-        return response()->json(['status' => true, 'message' => __('İzinler başarıyla ayarlandı')]);
+        // Ensure the home directory itself is accessible by the web server
+        $response = $this->executeCommand(
+            "sudo chmod -R 755 /home/$username",
+            __('Permissions successfully set for home directory'),
+            __('Failed to set permissions for home directory')
+        );
+
+        return $response;
     }
+
 
     public function createPhpIni(Request $request)
     {
