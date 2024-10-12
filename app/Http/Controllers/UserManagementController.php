@@ -205,8 +205,32 @@ class UserManagementController extends Controller
         $phpIniFile = "/home/$username/php/php.ini";
         $phpIniTemplate = file_get_contents(base_path('server/php/php.ini'));
         $phpIniContent = str_replace('TRPANEL_USER', $username, $phpIniTemplate);
-        File::put($phpIniFile, $phpIniContent);
+        $response = $this->executeCommand(
+            "sudo -u $username touch $phpIniFile",
+            __('php.ini başarıyla oluşturuldu'),
+            __('php.ini oluşturulamadı')
+        );
+        return $response;
+    }
 
-        return response()->json(['status' => true, 'message' => __('php.ini başarıyla oluşturuldu')]);
+    public function reloadServices(Request $request)
+    {
+        $response = $this->executeCommand(
+            'sudo apachectl graceful',
+            __('Apache başarıyla yeniden yüklendi'),
+            __('Apache yeniden yüklenemedi')
+        );
+
+        if ($response->getData()->status === false) {
+            return $response;
+        }
+
+        $response = $this->executeCommand(
+            'sudo systemctl reload php8.3-fpm',
+            __('PHP-FPM başarıyla yeniden yüklendi'),
+            __('PHP-FPM yeniden yüklenemedi')
+        );
+
+        return $response;
     }
 }

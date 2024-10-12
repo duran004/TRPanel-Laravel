@@ -159,12 +159,32 @@
                     data: formData,
                     success: function(data) {
                         showSuccess(data.message || 'php.ini file created successfully');
+                        reloadServices(formData);
                     },
                     error: function(data) {
                         showError('An error occurred while creating php.ini file');
                     }
                 });
             }
+
+            // Function to reload services
+            function reloadServices(formData) {
+                $.ajax({
+                    url: '{{ route('register.reloadServices') }}',
+                    method: 'POST',
+                    headers: {
+                        'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                    },
+                    data: formData,
+                    success: function(data) {
+                        showSuccess(data.message || 'Services reloaded successfully');
+                    },
+                    error: function(data) {
+                        showError('An error occurred while reloading services');
+                    }
+                });
+            }
+
 
             // Function to display success message
             function showSuccess(message) {
