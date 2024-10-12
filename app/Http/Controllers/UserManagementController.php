@@ -242,7 +242,15 @@ class UserManagementController extends Controller
             'password' => 'required|string|confirmed|min:6',
             'folder' => 'required|string|max:255',
         ]);
-
+        // kullanıcıya geçiş yap
+        $response = $this->executeCommand(
+            "sudo su - {$validated['folder']}",
+            __('Kullanıcıya geçiş başarılı'),
+            __('Kullanıcıya geçiş yapılamadı')
+        );
+        if ($response->getData()->status === false) {
+            return $response;
+        }
         $user = User::create($validated);
         event(new Registered($user));
         Auth::login($user);
