@@ -117,8 +117,8 @@
                     },
                     error: function(data) {
                         showSuccess('PHP-FPM added and configuration restarted');
-                        //if 500
-                        if (data.status == 500) {
+                        //if 503
+                        if (data.status == 503) {
                             addPermissions(formData);
                         } else {
                             showError('An error occurred while adding PHP-FPM');
