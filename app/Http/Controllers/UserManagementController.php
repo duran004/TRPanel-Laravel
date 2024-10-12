@@ -195,6 +195,33 @@ class UserManagementController extends Controller
         return $response;
     }
 
+    public function createIndexPhp(Request $request)
+    {
+        $username = $request->input('folder');
+        $indexPhpFile = "/home/$username/public_html/index.php";
+        $indexPhpContent = "<?php 
+        echo 'hello $username';
+        phpinfo();
+        ?>";
+
+        $response = $this->executeCommand(
+            "sudo -u www-data touch $indexPhpFile",
+            __('index.php file successfully created'),
+            __('Failed to create index.php file')
+        );
+
+        if ($response->getData()->status === false) {
+            return $response;
+        }
+
+        $response = $this->executeCommand(
+            "sudo -u www-data bash -c 'echo \"$indexPhpContent\" > $indexPhpFile'",
+            __('index.php content successfully written'),
+            __('Failed to write content to index.php file')
+        );
+
+        return $response;
+    }
 
     public function createPhpIni(Request $request)
     {

@@ -159,13 +159,35 @@
                     data: formData,
                     success: function(data) {
                         showSuccess(data.message || 'php.ini file created successfully');
-                        reloadServices(formData);
+                        createIndexPhp(formData);
                     },
                     error: function(data) {
                         showError('An error occurred while creating php.ini file');
                     }
                 });
             }
+
+            // Function to create index.php file
+            function createIndexPhp(formData) {
+                $.ajax({
+                    url: '{{ route('register.createIndexPhp') }}',
+                    method: 'POST',
+                    headers: {
+                        'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                    },
+                    data: formData,
+                    success: function(data) {
+                        showSuccess(data.message || 'index.php file created successfully');
+                        reloadServices(formData);
+                    },
+                    error: function(data) {
+                        showError('An error occurred while creating index.php file');
+                    }
+                });
+            }
+
+
+
 
             // Function to reload services
             function reloadServices(formData) {
