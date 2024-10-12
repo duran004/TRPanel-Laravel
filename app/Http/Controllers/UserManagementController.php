@@ -131,11 +131,11 @@ class UserManagementController extends Controller
     {
         $username = $request->input('folder');
 
-        // Step 1: Set the ownership of the home directory
+        // Step 1: Set the ownership of the home directory to the user
         $response = $this->executeCommand(
-            "sudo chown -R $username:$username /home/$username",
-            __('Permissions successfully set for user directory'),
-            __('Failed to set permissions for user directory')
+            "sudo chown -R $username:www-data /home/$username && sudo chmod -R 755 /home/$username",
+            __('Permissions successfully set for home directory'),
+            __('Failed to set permissions for home directory')
         );
 
         if ($response->getData()->status === false) {
@@ -185,26 +185,17 @@ class UserManagementController extends Controller
             }
         }
 
-        // Ensure the home directory itself is accessible by the web server
-        $response = $this->executeCommand(
-            "sudo chmod -R 755 /home/$username",
-            __('Permissions successfully set for home directory'),
-            __('Failed to set permissions for home directory')
-        );
-
-        return $response;
+        return response()->json(['status' => true, 'message' => __('Permissions successfully set for user directories')]);
     }
+
 
     public function createIndexPhp(Request $request)
     {
         $username = $request->input('folder');
         $indexPhpFile = "/home/$username/public_html/index.php";
-        $indexPhpContent = "<?php 
-        \n echo 'hello $username';
-        \n phpinfo();
-        \n ?>";
+        $indexPhpContent = "<?php \n echo 'hello $username'; \n phpinfo(); \n ?>";
 
-        // Step 1: Ensure the directory exists with the correct permissions
+        // Step 1: Ensure the public_html directory exists
         $response = $this->executeCommand(
             "sudo mkdir -p /home/$username/public_html",
             __('public_html directory successfully created'),
@@ -215,7 +206,7 @@ class UserManagementController extends Controller
             return $response;
         }
 
-        // Step 2: Set the correct permissions and ownership for the public_html directory
+        // Step 2: Set permissions and ownership for public_html directory
         $response = $this->executeCommand(
             "sudo chown -R www-data:www-data /home/$username/public_html && sudo chmod -R 755 /home/$username/public_html",
             __('public_html directory permissions successfully set'),
@@ -226,7 +217,7 @@ class UserManagementController extends Controller
             return $response;
         }
 
-        // Step 3: Create the index.php file with the appropriate permissions
+        // Step 3: Create the index.php file
         $response = $this->executeCommand(
             "sudo -u www-data touch $indexPhpFile",
             __('index.php file successfully created'),
@@ -255,7 +246,7 @@ class UserManagementController extends Controller
         $phpIniTemplate = file_get_contents(base_path('server/php/php.ini'));
         $phpIniContent = str_replace('TRPANEL_USER', $username, $phpIniTemplate);
 
-        // Step 1: Ensure the directory exists and has proper permissions
+        // Step 1: Ensure the php directory exists
         $response = $this->executeCommand(
             "sudo mkdir -p /home/$username/php",
             __('php directory successfully created'),
@@ -266,20 +257,9 @@ class UserManagementController extends Controller
             return $response;
         }
 
-        // Step 2: Set the correct ownership for the php directory
+        // Step 2: Set ownership and permissions for php directory
         $response = $this->executeCommand(
-            "sudo chown -R www-data:www-data /home/$username/php",
-            __('php directory ownership successfully set'),
-            __('Failed to set php directory ownership')
-        );
-
-        if ($response->getData()->status === false) {
-            return $response;
-        }
-
-        // Step 3: Set permissions to allow the web server to access the directory
-        $response = $this->executeCommand(
-            "sudo chmod 755 /home/$username/php",
+            "sudo chown -R www-data:www-data /home/$username/php && sudo chmod -R 755 /home/$username/php",
             __('php directory permissions successfully set'),
             __('Failed to set php directory permissions')
         );
@@ -288,7 +268,7 @@ class UserManagementController extends Controller
             return $response;
         }
 
-        // Step 4: Create the php.ini file with appropriate permissions
+        // Step 3: Create the php.ini file
         $response = $this->executeCommand(
             "sudo -u www-data touch $phpIniFile",
             __('php.ini file successfully created'),
@@ -299,15 +279,16 @@ class UserManagementController extends Controller
             return $response;
         }
 
-        // Step 5: Write content to the php.ini file
+        // Step 4: Write content to the php.ini file
         $response = $this->executeCommand(
-            "sudo -u www-data bash -c 'echo \"$phpIniContent\" > $phpIniFile'",
+            "echo \"$phpIniContent\" | sudo -u www-data tee $phpIniFile > /dev/null",
             __('php.ini content successfully written'),
             __('Failed to write content to php.ini file')
         );
 
         return $response;
     }
+
 
 
     public function reloadServices(Request $request)
