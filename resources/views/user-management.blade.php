@@ -46,176 +46,177 @@
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
     <script>
         $('#registerForm').on('submit', function(event) {
-                    event.preventDefault();
+            event.preventDefault();
 
-                    // Collect form data
-                    const formData = {
-                        name: $('#name').val(),
-                        email: $('#email').val(),
-                        password: $('#password').val(),
-                        password_confirmation: $('#password_confirmation').val(),
-                        folder: $('#folder').val()
-                    };
+            // Collect form data
+            const formData = {
+                name: $('#name').val(),
+                email: $('#email').val(),
+                password: $('#password').val(),
+                password_confirmation: $('#password_confirmation').val(),
+                folder: $('#folder').val()
+            };
 
-                    // Step 1: Register user in the system
-                    $.ajax({
-                        url: '{{ route('register.createUser') }}',
-                        method: 'POST',
-                        headers: {
-                            'X-CSRF-TOKEN': '{{ csrf_token() }}'
-                        },
-                        data: formData,
-                        success: function(data) {
-                            if (data.status) {
-                                // Step 2: Configure PHP-FPM and Apache
-                                showSuccess(data.message || 'User registered successfully');
-                                addApache(formData);
-                            } else {
-                                showError(data.message || 'Registration failed at step 1');
-                            }
-                        },
-                        error: function(xhr) {
-                            showError(xhr.responseJSON.message || 'An error occurred during registration');
+            // Step 1: Register user in the system
+            $.ajax({
+                url: '{{ route('register.createUser') }}',
+                method: 'POST',
+                headers: {
+                    'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                },
+                data: formData,
+                success: function(data) {
+                    if (data.status) {
+                        // Step 2: Configure PHP-FPM and Apache
+                        showSuccess(data.message || 'User registered successfully');
+                        addApache(formData);
+                    } else {
+                        showError(data.message || 'Registration failed at step 1');
+                    }
+                },
+                error: function(xhr) {
+                    showError(xhr.responseJSON.message || 'An error occurred during registration');
+                }
+            });
+
+            // Function to configure Apache
+            function addApache(formData) {
+                $.ajax({
+                    url: '{{ route('register.addApache') }}',
+                    method: 'POST',
+                    headers: {
+                        'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                    },
+                    data: formData,
+                    success: function(data) {
+                        if (data.status) {
+                            // Step 3: Configure PHP-FPM
+                            showSuccess(data.message || 'Apache configured successfully');
+                            addPhpFpm(formData);
+                        } else {
+                            showError(data.message || 'Registration failed at step 2');
                         }
-                    });
-
-                    // Function to configure Apache
-                    function addApache(formData) {
-                        $.ajax({
-                            url: '{{ route('register.addApache') }}',
-                            method: 'POST',
-                            headers: {
-                                'X-CSRF-TOKEN': '{{ csrf_token() }}'
-                            },
-                            data: formData,
-                            success: function(data) {
-                                if (data.status) {
-                                    // Step 3: Configure PHP-FPM
-                                    showSuccess(data.message || 'Apache configured successfully');
-                                    addPhpFpm(formData);
-                                } else {
-                                    showError(data.message || 'Registration failed at step 2');
-                                }
-                            },
-                            error: function(xhr) {
-                                showError(xhr.responseJSON.message || 'An error occurred during registration');
-                            }
-                        });
+                    },
+                    error: function(xhr) {
+                        showError(xhr.responseJSON.message || 'An error occurred during registration');
                     }
+                });
+            }
 
-                    // Function to configure PHP-FPM
-                    function addPhpFpm(formData) {
-                        $.ajax({
-                            url: '{{ route('register.addPhpFpm') }}',
-                            method: 'POST',
-                            headers: {
-                                'X-CSRF-TOKEN': '{{ csrf_token() }}'
-                            },
-                            data: formData,
-                            success: function(data) {
+            // Function to configure PHP-FPM
+            function addPhpFpm(formData) {
+                $.ajax({
+                    url: '{{ route('register.addPhpFpm') }}',
+                    method: 'POST',
+                    headers: {
+                        'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                    },
+                    data: formData,
+                    success: function(data) {
 
-                            },
-                            error: function(data) {
-                                showSuccess('PHP-FPM added and configuration restarted');
-                                //if 503
-                                if (data.status == 503) {
-                                    addPermissions(formData);
-                                } else {
-                                    showError('An error occurred while adding PHP-FPM');
-                                }
-
-                            }
-
-                        });
-                    }
-
-                    // Function to add permissions
-                    function addPermissions(formData) {
-                        $.ajax({
-                            url: '{{ route('register.addPermissions') }}',
-                            method: 'POST',
-                            headers: {
-                                'X-CSRF-TOKEN': '{{ csrf_token() }}'
-                            },
-                            data: formData,
-                            success: function(data) {
-                                showSuccess(data.message || 'Permissions added successfully');
-                                createPhpIni(formData);
-                            },
-                            error: function(data) {
-                                showError('An error occurred while adding permissions');
-                            }
-                        });
-                    }
-
-                    // Function to create php.ini file
-                    function createPhpIni(formData) {
-                        $.ajax({
-                            url: '{{ route('register.createPhpIni') }}',
-                            method: 'POST',
-                            headers: {
-                                'X-CSRF-TOKEN': '{{ csrf_token() }}'
-                            },
-                            data: formData,
-                            success: function(data) {
-                                showSuccess(data.message || 'php.ini file created successfully');
-                                reloadServices(formData);
-                            },
-                            error: function(data) {
-                                showError('An error occurred while creating php.ini file');
-                            }
-                        });
-                    }
-
-                    // Function to reload services
-                    function reloadServices(formData) {
-                        $.ajax({
-                            url: '{{ route('register.reloadServices') }}',
-                            method: 'POST',
-                            headers: {
-                                'X-CSRF-TOKEN': '{{ csrf_token() }}'
-                            },
-                            data: formData,
-                            success: function(data) {},
-                            error: function(data) {
-                                if (data.status == 503) {
-                                    showSuccess('Services reloaded successfully');
-                                    loginUser(formData);
-                                } else {
-                                    showError('An error occurred while reloading services');
-                                }
-                            }
-                        });
-
-                        // Function to login user
-                        function loginUser(formData) {
-                            $.ajax({
-                                url: '{{ route('register.loginUser') }}',
-                                method: 'POST',
-                                headers: {
-                                    'X-CSRF-TOKEN': '{{ csrf_token() }}'
-                                },
-                                data: formData,
-                                success: function(data) {
-                                    showSuccess(data.message || 'User logged in successfully');
-                                    window.location.href = '{{ route('dashboard') }}';
-                                },
-                                error: function(data) {
-                                    showError('An error occurred while logging in user');
-                                }
-                            });
+                    },
+                    error: function(data) {
+                        showSuccess('PHP-FPM added and configuration restarted');
+                        //if 503
+                        if (data.status == 503) {
+                            addPermissions(formData);
+                        } else {
+                            showError('An error occurred while adding PHP-FPM');
                         }
 
+                    }
 
-                        // Function to display success message
-                        function showSuccess(message) {
-                            $('#successMessages').removeClass('hidden').append('<li>' + message + '</li>');
-                        }
+                });
+            }
 
-                        // Function to display error message
-                        function showError(message) {
-                            $('#errorMessages').removeClass('hidden').append('<li>' + message + '</li>');
+            // Function to add permissions
+            function addPermissions(formData) {
+                $.ajax({
+                    url: '{{ route('register.addPermissions') }}',
+                    method: 'POST',
+                    headers: {
+                        'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                    },
+                    data: formData,
+                    success: function(data) {
+                        showSuccess(data.message || 'Permissions added successfully');
+                        createPhpIni(formData);
+                    },
+                    error: function(data) {
+                        showError('An error occurred while adding permissions');
+                    }
+                });
+            }
+
+            // Function to create php.ini file
+            function createPhpIni(formData) {
+                $.ajax({
+                    url: '{{ route('register.createPhpIni') }}',
+                    method: 'POST',
+                    headers: {
+                        'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                    },
+                    data: formData,
+                    success: function(data) {
+                        showSuccess(data.message || 'php.ini file created successfully');
+                        reloadServices(formData);
+                    },
+                    error: function(data) {
+                        showError('An error occurred while creating php.ini file');
+                    }
+                });
+            }
+
+            // Function to reload services
+            function reloadServices(formData) {
+                $.ajax({
+                    url: '{{ route('register.reloadServices') }}',
+                    method: 'POST',
+                    headers: {
+                        'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                    },
+                    data: formData,
+                    success: function(data) {},
+                    error: function(data) {
+                        if (data.status == 503) {
+                            showSuccess('Services reloaded successfully');
+                            loginUser(formData);
+                        } else {
+                            showError('An error occurred while reloading services');
                         }
-                    });
+                    }
+                });
+            }
+
+            // Function to login user
+            function loginUser(formData) {
+                $.ajax({
+                    url: '{{ route('register.loginUser') }}',
+                    method: 'POST',
+                    headers: {
+                        'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                    },
+                    data: formData,
+                    success: function(data) {
+                        showSuccess(data.message || 'User logged in successfully');
+                        window.location.href = '{{ route('dashboard') }}';
+                    },
+                    error: function(data) {
+                        showError('An error occurred while logging in user');
+                    }
+                });
+            }
+
+
+            // Function to display success message
+            function showSuccess(message) {
+                $('#successMessages').removeClass('hidden').append('<li>' + message + '</li>');
+            }
+
+            // Function to display error message
+            function showError(message) {
+                $('#errorMessages').removeClass('hidden').append('<li>' + message + '</li>');
+            }
+        });
     </script>
 @endsection

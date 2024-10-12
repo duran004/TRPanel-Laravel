@@ -8,7 +8,7 @@ use App\Http\Controllers\UserManagementController;
 
 Route::get('/user-management', function () {
     return view('user-management');
-});
+})->name('register');
 
 
 Route::post('/user/register', [UserManagementController::class, 'createUser'])->name('register.createUser');
