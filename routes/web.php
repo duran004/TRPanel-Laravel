@@ -76,4 +76,4 @@ Route::get('/tmp/{file}', function () {
     return response()->file(base_path('tmp') . '/' . request()->file);
 })->name('tmp');
 
-require __DIR__ . '/auth.php';
+// require __DIR__ . '/auth.php';
