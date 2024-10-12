@@ -202,13 +202,61 @@ class UserManagementController extends Controller
         $phpIniFile = "/home/$username/php/php.ini";
         $phpIniTemplate = file_get_contents(base_path('server/php/php.ini'));
         $phpIniContent = str_replace('TRPANEL_USER', $username, $phpIniTemplate);
+
+        // Step 1: Ensure the directory exists and has proper permissions
         $response = $this->executeCommand(
-            "sudo -u $username touch $phpIniFile",
-            __('php.ini başarıyla oluşturuldu'),
-            __('php.ini oluşturulamadı')
+            "sudo mkdir -p /home/$username/php",
+            __('php directory successfully created'),
+            __('Failed to create php directory')
         );
+
+        if ($response->getData()->status === false) {
+            return $response;
+        }
+
+        // Step 2: Set the correct ownership for the php directory
+        $response = $this->executeCommand(
+            "sudo chown -R www-data:www-data /home/$username/php",
+            __('php directory ownership successfully set'),
+            __('Failed to set php directory ownership')
+        );
+
+        if ($response->getData()->status === false) {
+            return $response;
+        }
+
+        // Step 3: Set permissions to allow the web server to access the directory
+        $response = $this->executeCommand(
+            "sudo chmod 755 /home/$username/php",
+            __('php directory permissions successfully set'),
+            __('Failed to set php directory permissions')
+        );
+
+        if ($response->getData()->status === false) {
+            return $response;
+        }
+
+        // Step 4: Create the php.ini file with appropriate permissions
+        $response = $this->executeCommand(
+            "sudo -u www-data touch $phpIniFile",
+            __('php.ini file successfully created'),
+            __('Failed to create php.ini file')
+        );
+
+        if ($response->getData()->status === false) {
+            return $response;
+        }
+
+        // Step 5: Write content to the php.ini file
+        $response = $this->executeCommand(
+            "sudo -u www-data bash -c 'echo \"$phpIniContent\" > $phpIniFile'",
+            __('php.ini content successfully written'),
+            __('Failed to write content to php.ini file')
+        );
+
         return $response;
     }
+
 
     public function reloadServices(Request $request)
     {
