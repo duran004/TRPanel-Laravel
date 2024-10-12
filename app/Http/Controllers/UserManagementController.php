@@ -127,6 +127,7 @@ class UserManagementController extends Controller
         return $response;
     }
 
+
     public function addPermissions(Request $request)
     {
         $username = $request->input('folder');
@@ -184,6 +185,33 @@ class UserManagementController extends Controller
                 return $response;
             }
         }
+        //normalde burada 503 veriyor ama 
+        // duran@duran:/home$ sudo chown -R qweqwe2:www-data /home/qweqwe2/public_html
+        // sudo chmod -R 775 /home/qweqwe2/public_html
+        // duran@duran:/home$ sudo chown qweqwe2:www-data /run/php/php8.3-fpm-qweqwe2.sock
+        // sudo chmod 660 /run/php/php8.3-fpm-qweqwe2.sock
+        // duran@duran:/home$ bu ikisini çalıştırınca düzeliyor
+        $response = $this->executeCommand(
+            "sudo chown -R $username:www-data /home/$username/public_html && sudo chmod -R 775 /home/$username/public_html",
+            __('Permissions successfully set for user directories'),
+            __('Failed to set permissions for user directories')
+        );
+
+        if ($response->getData()->status === false) {
+            return $response;
+        }
+
+        $response = $this->executeCommand(
+            "sudo chown $username:www-data /run/php/php8.3-fpm-$username.sock && sudo chmod 660 /run/php/php8.3-fpm-$username.sock",
+            __('Permissions successfully set for PHP-FPM socket'),
+            __('Failed to set permissions for PHP-FPM socket')
+        );
+
+        if ($response->getData()->status === false) {
+            return $response;
+        }
+
+
 
         return response()->json(['status' => true, 'message' => __('Permissions successfully set for user directories')]);
     }
