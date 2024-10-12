@@ -200,10 +200,33 @@ class UserManagementController extends Controller
         $username = $request->input('folder');
         $indexPhpFile = "/home/$username/public_html/index.php";
         $indexPhpContent = "<?php 
-        echo 'hello $username';
-        phpinfo();
-        ?>";
+        \n echo 'hello $username';
+        \n phpinfo();
+        \n ?>";
 
+        // Step 1: Ensure the directory exists with the correct permissions
+        $response = $this->executeCommand(
+            "sudo mkdir -p /home/$username/public_html",
+            __('public_html directory successfully created'),
+            __('Failed to create public_html directory')
+        );
+
+        if ($response->getData()->status === false) {
+            return $response;
+        }
+
+        // Step 2: Set the correct permissions and ownership for the public_html directory
+        $response = $this->executeCommand(
+            "sudo chown -R www-data:www-data /home/$username/public_html && sudo chmod -R 755 /home/$username/public_html",
+            __('public_html directory permissions successfully set'),
+            __('Failed to set public_html directory permissions')
+        );
+
+        if ($response->getData()->status === false) {
+            return $response;
+        }
+
+        // Step 3: Create the index.php file with the appropriate permissions
         $response = $this->executeCommand(
             "sudo -u www-data touch $indexPhpFile",
             __('index.php file successfully created'),
@@ -214,14 +237,16 @@ class UserManagementController extends Controller
             return $response;
         }
 
+        // Step 4: Write content to the index.php file
         $response = $this->executeCommand(
-            "sudo -u www-data bash -c 'echo \"$indexPhpContent\" > $indexPhpFile'",
+            "echo \"$indexPhpContent\" | sudo -u www-data tee $indexPhpFile > /dev/null",
             __('index.php content successfully written'),
             __('Failed to write content to index.php file')
         );
 
         return $response;
     }
+
 
     public function createPhpIni(Request $request)
     {
