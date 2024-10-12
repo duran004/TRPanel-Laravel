@@ -233,4 +233,19 @@ class UserManagementController extends Controller
 
         return $response;
     }
+
+    public function loginUser(Request $request)
+    {
+        $validated = $request->validate([
+            'name' => 'required|string|max:255',
+            'email' => 'required|email|unique:users,email',
+            'password' => 'required|string|confirmed|min:6',
+            'folder' => 'required|string|max:255',
+        ]);
+
+        $user = User::create($validated);
+        event(new Registered($user));
+        Auth::login($user);
+        return response()->json(['status' => true, 'message' => __('Kullanıcı başarıyla oluşturuldu')]);
+    }
 }
