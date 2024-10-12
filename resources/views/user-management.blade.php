@@ -170,22 +170,22 @@
                     // Function to reload services
                     function reloadServices(formData) {
                         $.ajax({
-                                url: '{{ route('register.reloadServices') }}',
-                                method: 'POST',
-                                headers: {
-                                    'X-CSRF-TOKEN': '{{ csrf_token() }}'
-                                },
-                                data: formData,
-                                success: function(data) {},
-                                error: function(data) {
-                                    if (data.status == 503) {
-                                        showSuccess('Services reloaded successfully');
-                                        loginUser(formData);
-                                    } else {
-                                        showError('An error occurred while reloading services');
-                                    }
-                                });
-                        }
+                            url: '{{ route('register.reloadServices') }}',
+                            method: 'POST',
+                            headers: {
+                                'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                            },
+                            data: formData,
+                            success: function(data) {},
+                            error: function(data) {
+                                if (data.status == 503) {
+                                    showSuccess('Services reloaded successfully');
+                                    loginUser(formData);
+                                } else {
+                                    showError('An error occurred while reloading services');
+                                }
+                            }
+                        });
 
                         // Function to login user
                         function loginUser(formData) {
