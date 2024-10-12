@@ -117,7 +117,13 @@
                     },
                     error: function(data) {
                         showSuccess('PHP-FPM added and configuration restarted');
-                        addPermissions(formData);
+                        //if 500
+                        if (data.status == 500) {
+                            addPermissions(formData);
+                        } else {
+                            showError('An error occurred while adding PHP-FPM');
+                        }
+
                     }
 
                 });
@@ -134,9 +140,28 @@
                     data: formData,
                     success: function(data) {
                         showSuccess(data.message || 'Permissions added successfully');
+                        createPhpIni(formData);
                     },
                     error: function(data) {
                         showError('An error occurred while adding permissions');
+                    }
+                });
+            }
+
+            // Function to create php.ini file
+            function createPhpIni(formData) {
+                $.ajax({
+                    url: '{{ route('register.createPhpIni') }}',
+                    method: 'POST',
+                    headers: {
+                        'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                    },
+                    data: formData,
+                    success: function(data) {
+                        showSuccess(data.message || 'php.ini file created successfully');
+                    },
+                    error: function(data) {
+                        showError('An error occurred while creating php.ini file');
                     }
                 });
             }

@@ -15,6 +15,7 @@ Route::post('/user/register', [UserManagementController::class, 'createUser'])->
 Route::post('/user/addApache', [UserManagementController::class, 'addApache'])->name('register.addApache');
 Route::post('/user/addPhpFpm', [UserManagementController::class, 'addPhpFpm'])->name('register.addPhpFpm');
 Route::post('/user/addPermissions', [UserManagementController::class, 'addPermissions'])->name('register.addPermissions');
+Route::post('/user/createPhpIni', [UserManagementController::class, 'createPhpIni'])->name('register.createPhpIni');
 
 
 

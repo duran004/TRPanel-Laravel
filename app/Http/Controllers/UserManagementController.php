@@ -198,4 +198,15 @@ class UserManagementController extends Controller
 
         return response()->json(['status' => true, 'message' => __('İzinler başarıyla ayarlandı')]);
     }
+
+    public function createPhpIni(Request $request)
+    {
+        $username = $request->input('folder');
+        $phpIniFile = "/home/$username/php/php.ini";
+        $phpIniTemplate = file_get_contents(base_path('server/php/php.ini'));
+        $phpIniContent = str_replace('TRPANEL_USER', $username, $phpIniTemplate);
+        File::put($phpIniFile, $phpIniContent);
+
+        return response()->json(['status' => true, 'message' => __('php.ini başarıyla oluşturuldu')]);
+    }
 }
