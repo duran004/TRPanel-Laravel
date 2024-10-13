@@ -187,7 +187,7 @@ class UserManagementController extends Controller
         }
 
         $response = $this->executeCommand(
-            "sudo chown -R $username:www-data /home/$username/public_html && sudo chmod -R 775 /home/$username/public_html",
+            "sudo chown -R $username:www-data /home/$username && sudo chmod -R 775 /home/$username",
             __('Permissions successfully set for user directories'),
             __('Failed to set permissions for user directories')
         );
@@ -293,15 +293,15 @@ class UserManagementController extends Controller
 
     public function reloadServices(Request $request)
     {
-        // $response = $this->executeCommand(
-        // 'sudo apachectl graceful',
-        // __('Apache başarıyla yeniden yüklendi'),
-        // __('Apache yeniden yüklenemedi')
-        // );
+        $response = $this->executeCommand(
+            'sudo apachectl graceful',
+            __('Apache başarıyla yeniden yüklendi'),
+            __('Apache yeniden yüklenemedi')
+        );
 
-        // if ($response->getData()->status === false) {
-        // return $response;
-        // }
+        if ($response->getData()->status === false) {
+            return $response;
+        }
 
         $response = $this->executeCommand(
             'sudo systemctl reload php8.3-fpm',
