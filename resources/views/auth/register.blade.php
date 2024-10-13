@@ -62,7 +62,7 @@
 
             // Array of functions to execute in order
             let runFuncs = [
-                addApache, addPhpFpm, addPermissions, createPhpIni, createIndexPhp, reloadServices, loginUser
+                addPhpFpm, addApache, addPermissions, createPhpIni, createIndexPhp, reloadServices, loginUser
             ];
 
             // Function to run all functions in order
