@@ -185,12 +185,7 @@ class UserManagementController extends Controller
                 return $response;
             }
         }
-        //normalde burada 503 veriyor ama 
-        // duran@duran:/home$ sudo chown -R qweqwe2:www-data /home/qweqwe2/public_html
-        // sudo chmod -R 775 /home/qweqwe2/public_html
-        // duran@duran:/home$ sudo chown qweqwe2:www-data /run/php/php8.3-fpm-qweqwe2.sock
-        // sudo chmod 660 /run/php/php8.3-fpm-qweqwe2.sock
-        // duran@duran:/home$ bu ikisini çalıştırınca düzeliyor
+
         $response = $this->executeCommand(
             "sudo chown -R $username:www-data /home/$username/public_html && sudo chmod -R 775 /home/$username/public_html",
             __('Permissions successfully set for user directories'),
@@ -210,6 +205,7 @@ class UserManagementController extends Controller
         if ($response->getData()->status === false) {
             return $response;
         }
+
 
 
 
@@ -270,33 +266,10 @@ class UserManagementController extends Controller
     public function createPhpIni(Request $request)
     {
         $username = $request->input('folder');
-        $phpIniFile = "/home/$username/php/php.ini";
+        $phpIniFile = "/home/$username/public_html/.user.ini";
         $phpIniTemplate = file_get_contents(base_path('server/php/php.ini'));
         $phpIniContent = str_replace('TRPANEL_USER', $username, $phpIniTemplate);
 
-        // Step 1: Ensure the php directory exists
-        $response = $this->executeCommand(
-            "sudo mkdir -p /home/$username/php",
-            __('php directory successfully created'),
-            __('Failed to create php directory')
-        );
-
-        if ($response->getData()->status === false) {
-            return $response;
-        }
-
-        // Step 2: Set ownership and permissions for php directory
-        $response = $this->executeCommand(
-            "sudo chown -R www-data:www-data /home/$username/php && sudo chmod -R 755 /home/$username/php",
-            __('php directory permissions successfully set'),
-            __('Failed to set php directory permissions')
-        );
-
-        if ($response->getData()->status === false) {
-            return $response;
-        }
-
-        // Step 3: Create the php.ini file
         $response = $this->executeCommand(
             "sudo -u www-data touch $phpIniFile",
             __('php.ini file successfully created'),
@@ -307,7 +280,6 @@ class UserManagementController extends Controller
             return $response;
         }
 
-        // Step 4: Write content to the php.ini file
         $response = $this->executeCommand(
             "echo \"$phpIniContent\" | sudo -u www-data tee $phpIniFile > /dev/null",
             __('php.ini content successfully written'),
@@ -321,15 +293,15 @@ class UserManagementController extends Controller
 
     public function reloadServices(Request $request)
     {
-        $response = $this->executeCommand(
-            'sudo apachectl graceful',
-            __('Apache başarıyla yeniden yüklendi'),
-            __('Apache yeniden yüklenemedi')
-        );
+        // $response = $this->executeCommand(
+        // 'sudo apachectl graceful',
+        // __('Apache başarıyla yeniden yüklendi'),
+        // __('Apache yeniden yüklenemedi')
+        // );
 
-        if ($response->getData()->status === false) {
-            return $response;
-        }
+        // if ($response->getData()->status === false) {
+        // return $response;
+        // }
 
         $response = $this->executeCommand(
             'sudo systemctl reload php8.3-fpm',
