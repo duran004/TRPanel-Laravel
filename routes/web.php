@@ -1,24 +1,44 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
-use App\Http\Controllers\Dashboard\FolderController;
-use App\Http\Controllers\Dashboard\FileController;
+use App\Http\Controllers\AuthController;
 use App\Http\Controllers\DashBoardController;
+use App\Http\Controllers\PhpExtensionController;
+use App\Http\Controllers\Dashboard\FileController;
 use App\Http\Controllers\UserManagementController;
-
-Route::get('/user-management', function () {
-    return view('user-management');
-})->name('register');
+use App\Http\Controllers\Dashboard\FolderController;
 
 
-Route::post('/user/register', [UserManagementController::class, 'createUser'])->name('register.createUser');
-Route::post('/user/addApache', [UserManagementController::class, 'addApache'])->name('register.addApache');
-Route::post('/user/addPhpFpm', [UserManagementController::class, 'addPhpFpm'])->name('register.addPhpFpm');
-Route::post('/user/addPermissions', [UserManagementController::class, 'addPermissions'])->name('register.addPermissions');
-Route::post('/user/createPhpIni', [UserManagementController::class, 'createPhpIni'])->name('register.createPhpIni');
-Route::post('/user/createIndexPhp', [UserManagementController::class, 'createIndexPhp'])->name('register.createIndexPhp');
-Route::post('/user/reloadServices', [UserManagementController::class, 'reloadServices'])->name('register.reloadServices');
-Route::post('/user/loginUser', [UserManagementController::class, 'loginUser'])->name('register.loginUser');
+Route::group([
+    'middleware' => [],
+    'prefix' => 'user',
+], function () {
+
+    Route::post('/register', [UserManagementController::class, 'createUser'])->name('register.createUser');
+    Route::post('/addApache', [UserManagementController::class, 'addApache'])->name('register.addApache');
+    Route::post('/addPhpFpm', [UserManagementController::class, 'addPhpFpm'])->name('register.addPhpFpm');
+    Route::post('/addPermissions', [UserManagementController::class, 'addPermissions'])->name('register.addPermissions');
+    Route::post('/createPhpIni', [UserManagementController::class, 'createPhpIni'])->name('register.createPhpIni');
+    Route::post('/createIndexPhp', [UserManagementController::class, 'createIndexPhp'])->name('register.createIndexPhp');
+    Route::post('/reloadServices', [UserManagementController::class, 'reloadServices'])->name('register.reloadServices');
+    Route::post('/loginUser', [UserManagementController::class, 'loginUser'])->name('register.loginUser');
+});
+
+//auth routes
+Route::group([
+    'middleware' => [],
+    'prefix' => 'auth',
+], function () {
+    Route::get('/login', function () {
+        return view('auth.login');
+    })->name('login');
+    Route::post('/login', [AuthController::class, 'login'])->name('login.login');
+    Route::get('/logout', [AuthController::class, 'logout'])->name('logout');
+    Route::get('/register', function () {
+        return view('auth.register');
+    })->name('register');
+});
+
 
 
 
@@ -35,7 +55,7 @@ Route::view('profile', 'profile')
     ->middleware(['auth'])
     ->name('profile');
 
-use App\Http\Controllers\PhpExtensionController;
+
 
 Route::middleware(['auth'])->prefix('extensions')->name('extensions.')->group(function () {
     // PHP extension'ları listeleme

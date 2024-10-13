@@ -6,40 +6,40 @@
 
     <form id="registerForm" class="space-y-6">
         <div>
-            <label for="name" class="block text-sm font-medium text-gray-700">{{ __('Name') }}</label>
-            <input type="text" id="name" name="name" required autofocus
-                class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+            <x-input-label for="name" class="block text-sm font-medium text-gray-700">{{ __('Name') }}</label>
+                <x-text-input type="text" id="name" name="name" required autofocus
+                    class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
         </div>
 
         <div>
-            <label for="folder" class="block text-sm font-medium text-gray-700">{{ __('Folder') }}</label>
-            <input type="text" id="folder" name="folder" required pattern="^[a-zA-Z0-9_]*$"
-                class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+            <x-input-label for="folder" class="block text-sm font-medium text-gray-700">{{ __('Folder') }}</label>
+                <x-text-input type="text" id="folder" name="folder" required pattern="^[a-zA-Z0-9_]*$"
+                    class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
         </div>
 
         <div>
-            <label for="email" class="block text-sm font-medium text-gray-700">{{ __('Email') }}</label>
-            <input type="email" id="email" name="email" required
-                class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+            <x-input-label for="email" class="block text-sm font-medium text-gray-700">{{ __('Email') }}</label>
+                <x-text-input type="email" id="email" name="email" required
+                    class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
         </div>
 
         <div>
-            <label for="password" class="block text-sm font-medium text-gray-700">{{ __('Password') }}</label>
-            <input type="password" id="password" name="password" required
-                class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+            <x-input-label for="password" class="block text-sm font-medium text-gray-700">{{ __('Password') }}</label>
+                <x-text-input type="password" id="password" name="password" required
+                    class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
         </div>
 
         <div>
-            <label for="password_confirmation"
+            <x-input-label for="password_confirmation"
                 class="block text-sm font-medium text-gray-700">{{ __('Confirm Password') }}</label>
-            <input type="password" id="password_confirmation" name="password_confirmation" required
-                class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                <x-text-input type="password" id="password_confirmation" name="password_confirmation" required
+                    class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
         </div>
 
-        <button type="submit"
+        <x-primary-button type="submit"
             class="w-full py-2 px-4 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2">
             {{ __('Register') }}
-        </button>
+        </x-primary-button>
     </form>
 
 
