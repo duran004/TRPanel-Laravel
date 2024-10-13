@@ -219,27 +219,16 @@ class UserManagementController extends Controller
         $indexPhpFile = "/home/$username/public_html/index.php";
         $indexPhpContent = "<?php \n echo 'hello $username'; \n phpinfo(); \n ?>";
 
-        // Step 1: Ensure the public_html directory exists
-        $response = $this->executeCommand(
-            "sudo mkdir -p /home/$username/public_html",
-            __('public_html directory successfully created'),
-            __('Failed to create public_html directory')
-        );
+        // // Step 2: Set permissions and ownership for public_html directory
+        // $response = $this->executeCommand(
+        // "sudo chown -R www-data:www-data /home/$username/public_html && sudo chmod -R 755 /home/$username/public_html",
+        // __('public_html directory permissions successfully set'),
+        // __('Failed to set public_html directory permissions')
+        // );
 
-        if ($response->getData()->status === false) {
-            return $response;
-        }
-
-        // Step 2: Set permissions and ownership for public_html directory
-        $response = $this->executeCommand(
-            "sudo chown -R www-data:www-data /home/$username/public_html && sudo chmod -R 755 /home/$username/public_html",
-            __('public_html directory permissions successfully set'),
-            __('Failed to set public_html directory permissions')
-        );
-
-        if ($response->getData()->status === false) {
-            return $response;
-        }
+        // if ($response->getData()->status === false) {
+        // return $response;
+        // }
 
         // Step 3: Create the index.php file
         $response = $this->executeCommand(
