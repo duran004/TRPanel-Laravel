@@ -64,7 +64,7 @@ class PhpExtensionController extends Controller
             if (strpos($phpFpmConfigContent, $extensionLine) === false) {
                 $phpFpmConfigContent .= "\n" . $extensionLine;
                 file_put_contents($phpFpmConfigFile, $phpFpmConfigContent);
-                exec('sudo systemctl restart php8.3-fpm');
+                exec('sudo systemctl reload php8.3-fpm');
             }
         }
     }
@@ -79,7 +79,7 @@ class PhpExtensionController extends Controller
             if (strpos($phpFpmConfigContent, $extensionLine) !== false) {
                 $phpFpmConfigContent = str_replace($extensionLine, '', $phpFpmConfigContent);
                 file_put_contents($phpFpmConfigFile, $phpFpmConfigContent);
-                exec('sudo systemctl restart php8.3-fpm');
+                exec('sudo systemctl reload php8.3-fpm');
             }
         }
     }
